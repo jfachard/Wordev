@@ -1,0 +1,77 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  elo          Int      @default(1000)
+  wins         Int      @default(0)
+  losses       Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  gamesAsPlayer1 Game[]    @relation("Player1")
+  gamesAsPlayer2 Game[]    @relation("Player2")
+  gamesWon       Game[]    @relation("Winner")
+  eloStats       EloStat[]
+}
+
+model Word {
+  id   Int    @id @default(autoincrement())
+  word String @unique
+}
+
+model DailyWord {
+  date DateTime @id
+  word String
+}
+
+enum GameMode {
+  SOLO
+  VERSUS
+  DAILY
+}
+
+enum GameStatus {
+  WAITING
+  ACTIVE
+  FINISHED
+}
+
+model Game {
+  id              String     @id @default(uuid())
+  mode            GameMode   @default(SOLO)
+  status          GameStatus @default(WAITING)
+  word            String
+  player1Id       String
+  player2Id       String?
+  winnerId        String?
+  player1Attempts Int        @default(0)
+  player2Attempts Int        @default(0)
+  startedAt       DateTime   @default(now())
+  endedAt         DateTime?
+
+  player1  User      @relation("Player1", fields: [player1Id], references: [id])
+  player2  User?     @relation("Player2", fields: [player2Id], references: [id])
+  winner   User?     @relation("Winner", fields: [winnerId], references: [id])
+  eloStats EloStat[]
+}
+
+model EloStat {
+  id        String   @id @default(uuid())
+  userId    String
+  gameId    String
+  eloBefore Int
+  eloAfter  Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+}
