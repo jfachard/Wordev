@@ -1,9 +1,8 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt/dist/jwt.service';
-
 
 @Injectable()
 export class AuthService {
@@ -11,9 +10,18 @@ export class AuthService {
 
     async register(registerDto: RegisterDto) {
         const { email, passwordHash, username } = registerDto;
-        const existingUser = await this.prisma.user.findUnique({ where: { email } });
+        
+        const existingUser = await this.prisma.user.findFirst({ 
+            where: { 
+                OR: [
+                    { email },
+                    { username }
+                ]
+            } 
+        });
+        
         if (existingUser) {
-            throw new BadRequestException('User with this email already exists');
+            throw new ConflictException('Email or username already exists');
         }
 
         const hashedPassword = await bcrypt.hash(passwordHash, 10);
@@ -23,10 +31,14 @@ export class AuthService {
                 email,
                 passwordHash: hashedPassword,
                 username,
+                elo: 1000,
             },
         });
-        const { passwordHash: _, ...userWithoutPassword } = user;
-        return userWithoutPassword;
+        
+        const payload = { userId: user.id };
+        const accessToken = this.jwtService.sign(payload);
+
+        return { accessToken };
     }
 
     async findUserByEmail(email: string, password: string) {
@@ -35,7 +47,7 @@ export class AuthService {
         });
 
         if (!user) {
-            return new UnauthorizedException('User not found');
+            throw new UnauthorizedException('Email not found');
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
@@ -49,8 +61,7 @@ export class AuthService {
 
     async login(user: { id: string; email: string }) {
         const payload = { 
-            sub: user.id,
-            email: user.email 
+            userId: user.id
         };
         const accessToken = this.jwtService.sign(payload, {
             expiresIn: '1h',
