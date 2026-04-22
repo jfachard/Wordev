@@ -74,7 +74,7 @@ wordev/
 │   │   ├── composables/
 │   │   ├── stores/      # Pinia stores
 │   │   └── socket/
-├── server/          # NestJS backend
+├── wordev-api/          # NestJS backend
 │   ├── src/
 │   │   ├── auth/
 │   │   ├── games/
@@ -106,7 +106,7 @@ cd wordev
 
 **Backend:**
 ```bash
-cd server
+cd wordev-api
 npm install
 cp .env.example .env   # Fill in your DATABASE_URL and JWT secrets
 npx prisma migrate dev
@@ -126,7 +126,7 @@ npm run dev
 
 ## Environment Variables
 
-**Server (`server/.env`)**
+**Server (`wordev-api/.env`)**
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/wordev
 JWT_SECRET=your_jwt_secret
@@ -157,4 +157,4 @@ VITE_SOCKET_URL=http://localhost:3000
 ## Author
 
 **Jean-Francis Achard**
-[Portfolio](https://jfachard.vercel.app) · [GitHub](https://github.com/jfachard)
+[Portfolio](https://www.jfachard.com/) · [GitHub](https://github.com/jfachard)
