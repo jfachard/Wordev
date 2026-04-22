@@ -1,7 +1,8 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from './generated/client.ts';
+import { PrismaClient } from './generated/client';
 import { Pool } from 'pg';
 import * as dotenv from 'dotenv';
+import { getFlatCuratedWords } from './curated-word';
 
 dotenv.config();
 
@@ -9,61 +10,88 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-type DatamuseWord = { word: string; score: number; tags?: string[] };
+const WORDLE_LIST_URL =
+  'https://raw.githubusercontent.com/tabatkins/wordle-list/main/words';
 
-const QUERIES = [
-  'https://api.datamuse.com/words?ml=programming&max=1000',
-  'https://api.datamuse.com/words?ml=software&max=1000',
-  'https://api.datamuse.com/words?ml=algorithm&max=1000',
-  'https://api.datamuse.com/words?topics=technology&max=1000',
-  'https://api.datamuse.com/words?rel_trg=code&max=1000',
-  'https://api.datamuse.com/words?rel_trg=javascript&max=1000',
-];
+async function fetchWordleList(): Promise<{ word: string; length: number }[]> {
+  const response = await fetch(WORDLE_LIST_URL);
 
-const BLACKLIST = new Set([
-  'THE',
-  'AND',
-  'FOR',
-  'WITH',
-  'THIS',
-  'THAT',
-  'FROM',
-  'HAVE',
-  'ARE',
-]);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Wordle list: ${response.status}`);
+  }
 
-async function fetchWords(): Promise<string[]> {
-  const results = await Promise.all(
-    QUERIES.map((url) =>
-      fetch(url).then((r) => r.json() as Promise<DatamuseWord[]>),
-    ),
-  );
+  const text = await response.text();
 
-  const words = results
-    .flat()
-    .map((w) => w.word.toUpperCase())
+  const words = text
+    .trim()
+    .split('\n')
+    .map((w) => w.trim().toUpperCase())
     .filter((w) => /^[A-Z]+$/.test(w))
-    .filter((w) => w.length >= 3 && w.length <= 12)
-    .filter((w) => !BLACKLIST.has(w));
+    .filter((w) => w.length === 5);
 
-  return [...new Set(words)];
+  const unique = [...new Set(words)];
+
+  return unique.map((word) => ({ word, length: word.length }));
+}
+
+async function insertInChunks(
+  words: { word: string; length: number; isAnswer: boolean }[],
+  chunkSize = 500,
+) {
+  let totalInserted = 0;
+
+  for (let i = 0; i < words.length; i += chunkSize) {
+    const chunk = words.slice(i, i + chunkSize);
+    const result = await prisma.word.createMany({
+      data: chunk,
+      skipDuplicates: true,
+    });
+    totalInserted += result.count;
+  }
+
+  return totalInserted;
 }
 
 async function main() {
-  const words = await fetchWords();
-  console.log(`${words.length} unique words retrieved`);
+  await prisma.$executeRaw`TRUNCATE TABLE "DailyWord", "Word" RESTART IDENTITY CASCADE`;
 
-  const result = await prisma.word.createMany({
-    data: words.map((word) => ({ word })),
-    skipDuplicates: true,
+  const wordleWords = await fetchWordleList();
+
+  const wordleData = wordleWords.map((w) => ({ ...w, isAnswer: false }));
+  const wordleInserted = await insertInChunks(wordleData);
+
+  const curated = getFlatCuratedWords();
+
+  let curatedCreated = 0;
+  let curatedUpdated = 0;
+
+  for (const { word, length } of curated) {
+    const result = await prisma.word.upsert({
+      where: { word },
+      create: { word, length, isAnswer: true },
+      update: { isAnswer: true },
+    });
+  }
+
+  const totalAnswers = await prisma.word.count({ where: { isAnswer: true } });
+
+  const total = await prisma.word.count();
+
+  const distribution = await prisma.word.groupBy({
+    by: ['length'],
+    where: { isAnswer: true },
+    _count: true,
+    orderBy: { length: 'asc' },
   });
 
-  console.log(`✅ ${result.count} inserted words (duplicates ignored)`);
+  distribution.forEach((d) => {
+    console.log(`   ${d.length} letters : ${d._count} words`);
+  });
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Seed failed:', e);
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());

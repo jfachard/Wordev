@@ -23,16 +23,19 @@ model User {
   eloStats       EloStat[]
 }
 
-model DailyWord {
-  date   DateTime @id
-  wordId Int
-  word   Word     @relation(fields: [wordId], references: [id])
-}
-
 model Word {
   id         Int         @id @default(autoincrement())
   word       String      @unique
+  length     Int
+  isAnswer   Boolean     @default(false)
   dailyWords DailyWord[]
+  @@index([length])
+}
+
+model DailyWord {
+  date   DateTime @id @db.Date
+  wordId Int
+  word   Word     @relation(fields: [wordId], references: [id])
 }
 
 enum GameMode {
