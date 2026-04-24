@@ -1,4 +1,15 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Post, UseGuards, Req, Body } from '@nestjs/common';
+import { GamesService } from './games.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('games')
-export class GamesController {}
+export class GamesController {
+  constructor(private readonly gamesService: GamesService) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Post('solo/start')
+  async startSoloGame(@Req() req, @Body('length') length?: number) {
+    const userId = req.user.userId;
+    return this.gamesService.startSoloGame(userId, length);
+  }
+}
