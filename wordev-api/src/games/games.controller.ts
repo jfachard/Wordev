@@ -12,4 +12,15 @@ export class GamesController {
     const userId = req.user.userId;
     return this.gamesService.startSoloGame(userId, length);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('solo/guess')
+  async submitGuess(
+    @Req() req,
+    @Body('gameId') gameId: string,
+    @Body('guess') guess: string,
+  ) {
+    const userId = req.user.userId;
+    return this.gamesService.submitGuess(userId, gameId, guess);
+  }
 }
