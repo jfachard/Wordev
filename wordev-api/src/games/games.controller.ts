@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, Req, Body } from '@nestjs/common';
+import { Controller, Post, Get, Param, UseGuards, Req, Body } from '@nestjs/common';
 import { GamesService } from './games.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -22,5 +22,12 @@ export class GamesController {
   ) {
     const userId = req.user.userId;
     return this.gamesService.submitGuess(userId, gameId, guess);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('solo/:id')
+  async getGameStatus(@Req() req, @Param('id') id: string) {
+    const userId = req.user.userId;
+    return this.gamesService.getGameStatus(userId, id);
   }
 }

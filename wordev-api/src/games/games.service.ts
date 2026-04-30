@@ -100,4 +100,32 @@ export class GamesService {
             game: updatedGame
         };
     }
+
+    async getGameStatus(userId: string, gameId: string) {
+        const game = await this.prisma.game.findUnique({
+            where: { id: gameId },
+            select: {
+                id: true,
+                mode: true,
+                status: true,
+                player1Attempts: true,
+                endedAt: true,
+                word: true,
+                player1Id: true,
+            }
+        });
+
+        if (!game || game.player1Id !== userId) {
+            throw new NotFoundException('Game not found or you are not the owner');
+        }
+
+        return {
+            gameId: game.id,
+            status: game.status,
+            mode: game.mode,
+            attempts: game.player1Attempts,
+            endedAt: game.endedAt,
+            ...(game.status === 'FINISHED' ? { word: game.word } : {})
+        };
+    }
 }
