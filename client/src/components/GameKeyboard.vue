@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { watch, onUnmounted } from 'vue'
-import Keyboard from 'simple-keyboard'
-import 'simple-keyboard/build/css/index.css'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import type { LetterResult } from '@/types/game'
+
+type Layout = 'qwerty' | 'azerty'
+
+const LAYOUTS: Record<Layout, string[]> = {
+  qwerty: ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'],
+  azerty: ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'],
+}
 
 const props = defineProps<{
   letterColors: Record<string, LetterResult>
@@ -15,24 +20,31 @@ const emit = defineEmits<{
   backspace: []
 }>()
 
-let kb: InstanceType<typeof Keyboard> | null = null
+const layout = ref<Layout>('qwerty')
+const rows = computed(() => LAYOUTS[layout.value])
 
-function updateTheme() {
-  if (!kb) return
-  const groups: Partial<Record<LetterResult, string[]>> = {}
-  for (const [letter, result] of Object.entries(props.letterColors)) {
-    if (!groups[result]) groups[result] = []
-    groups[result]!.push(letter)
-  }
-  kb.setOptions({
-    buttonTheme: (Object.entries(groups) as [LetterResult, string[]][]).map(([result, letters]) => ({
-      class: `key-${result}`,
-      buttons: letters.join(' '),
-    })),
-  })
+function keyBg(letter: string): string {
+  const r = props.letterColors[letter]
+  if (r === 'correct') return 'var(--color-correct)'
+  if (r === 'present') return 'var(--color-present)'
+  if (r === 'absent') return 'var(--color-absent)'
+  return 'var(--color-surface)'
 }
 
-watch(() => props.letterColors, updateTheme, { deep: true })
+function keyColor(letter: string): string {
+  const r = props.letterColors[letter]
+  if (r === 'present') return 'var(--color-accent-dark)'
+  if (r === 'correct' || r === 'absent') return 'white'
+  return 'var(--color-text)'
+}
+
+function keyShadow(letter: string): string {
+  const r = props.letterColors[letter]
+  if (r === 'correct') return '0 2px 0 color-mix(in srgb, var(--color-correct) 50%, black)'
+  if (r === 'present') return '0 2px 0 color-mix(in srgb, var(--color-present) 50%, black)'
+  if (r === 'absent') return '0 2px 0 color-mix(in srgb, var(--color-absent) 50%, black)'
+  return '0 2px 0 var(--color-border)'
+}
 
 function onKeydown(e: KeyboardEvent) {
   if (!props.active) return
@@ -47,88 +59,105 @@ watch(() => props.active, (active) => {
   else window.removeEventListener('keydown', onKeydown)
 }, { immediate: true })
 
-function onKeyboardRef(el: Element | null) {
-  if (el instanceof HTMLElement) {
-    kb?.destroy()
-    kb = new Keyboard(el, {
-      onKeyPress: (button: string) => {
-        if (button === '{enter}') emit('submit')
-        else if (button === '{bksp}') emit('backspace')
-        else emit('letter', button)
-      },
-      layout: {
-        default: [
-          'Q W E R T Y U I O P',
-          'A S D F G H J K L',
-          '{enter} Z X C V B N M {bksp}',
-        ],
-      },
-      display: { '{bksp}': '⌫', '{enter}': 'ENT' },
-      theme: 'hg-theme-default wordev-keyboard',
-      mergeDisplay: true,
-      preventMouseDownDefault: true,
-    })
-  } else {
-    kb?.destroy()
-    kb = null
-  }
-}
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', onKeydown)
-  kb?.destroy()
-})
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <div :ref="onKeyboardRef" class="w-full max-w-lg" />
+  <div class="flex flex-col items-center gap-2 w-full max-w-lg select-none">
+
+    <!-- Layout selector -->
+    <div class="self-end">
+      <select
+        v-model="layout"
+        class="text-xs font-mono uppercase tracking-widest px-2 py-1 rounded-xs cursor-pointer outline-none"
+        :style="{
+          backgroundColor: 'var(--color-surface)',
+          color: 'var(--color-text-muted)',
+          border: '1px solid var(--color-border)',
+        }"
+      >
+        <option value="qwerty">QWERTY</option>
+        <option value="azerty">AZERTY</option>
+      </select>
+    </div>
+
+    <!-- Keys -->
+    <div v-for="(row, i) in rows" :key="i" class="flex gap-1.5 justify-center w-full">
+
+      <button
+        v-if="i === 2"
+        @click="emit('submit')"
+        class="key key-fn font-bold uppercase tracking-wide"
+        :style="{
+          backgroundColor: 'var(--color-surface)',
+          color: 'var(--color-text)',
+          boxShadow: '0 2px 0 var(--color-border)',
+          border: '1px solid var(--color-border)',
+        }"
+      >ENT</button>
+
+      <button
+        v-for="letter in row"
+        :key="letter"
+        @click="emit('letter', letter)"
+        class="key font-bold uppercase"
+        :style="{
+          backgroundColor: keyBg(letter),
+          color: keyColor(letter),
+          boxShadow: keyShadow(letter),
+          border: `1px solid ${props.letterColors[letter] ? keyBg(letter) : 'var(--color-border)'}`,
+        }"
+      >{{ letter }}</button>
+
+      <button
+        v-if="i === 2"
+        @click="emit('backspace')"
+        class="key key-fn font-bold"
+        :style="{
+          backgroundColor: 'var(--color-surface)',
+          color: 'var(--color-text)',
+          boxShadow: '0 2px 0 var(--color-border)',
+          border: '1px solid var(--color-border)',
+        }"
+      >⌫</button>
+
+    </div>
+  </div>
 </template>
 
 <style scoped>
-:deep(.wordev-keyboard) {
-  background: transparent;
-  padding: 0;
-}
-:deep(.wordev-keyboard .hg-row) {
-  gap: 4px;
-  margin-bottom: 4px;
-}
-:deep(.wordev-keyboard .hg-row:last-child) {
-  margin-bottom: 0;
-}
-:deep(.wordev-keyboard .hg-button) {
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  max-width: 40px;
+  height: 56px;
   border-radius: 4px;
-  box-shadow: none;
   font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  height: 54px;
   font-size: 0.85rem;
-  transition: background-color 0.15s, color 0.15s;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.08s ease, box-shadow 0.08s ease;
 }
-:deep(.wordev-keyboard .hg-button:active) {
-  background: var(--color-surface-raised);
+
+.key:hover {
+  filter: brightness(1.1);
 }
-:deep(.wordev-keyboard .hg-button[data-skbtn="{enter}"]),
-:deep(.wordev-keyboard .hg-button[data-skbtn="{bksp}"]) {
+
+.key:active {
+  transform: translateY(2px);
+  box-shadow: none !important;
+}
+
+.key-fn {
+  flex: 1.6;
+  max-width: none;
   font-size: 0.75rem;
-  flex-grow: 1.5;
+  letter-spacing: 0.05em;
 }
-:deep(.wordev-keyboard .hg-button.key-correct) {
-  background: var(--color-correct);
-  color: white;
-  border-color: var(--color-correct);
-}
-:deep(.wordev-keyboard .hg-button.key-present) {
-  background: var(--color-present);
-  color: var(--color-accent-dark);
-  border-color: var(--color-present);
-}
-:deep(.wordev-keyboard .hg-button.key-absent) {
-  background: var(--color-absent);
-  color: white;
-  border-color: var(--color-absent);
+
+@media (max-width: 420px) {
+  .key { height: 46px; font-size: 0.75rem; }
+  .key-fn { font-size: 0.65rem; }
 }
 </style>
