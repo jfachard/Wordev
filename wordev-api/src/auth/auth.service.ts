@@ -38,7 +38,7 @@ export class AuthService {
         const payload = { userId: user.id };
         const accessToken = this.jwtService.sign(payload);
 
-        return { accessToken };
+        return { accessToken, username };
     }
 
     async findUserByEmail(email: string, password: string) {
@@ -59,7 +59,7 @@ export class AuthService {
         return userWithoutPassword;
     }
 
-    async login(user: { id: string; email: string }) {
+    async login(user: { id: string; email: string; username: string }) {
         const payload = { 
             userId: user.id
         };
@@ -74,6 +74,7 @@ export class AuthService {
         return {
             accessToken,
             refreshToken,
+            username: user.username,
         };
     }
 
