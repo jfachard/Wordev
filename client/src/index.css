@@ -18,10 +18,13 @@
 
   --color-accent:         #FEA619;
   --color-accent-dark:    #684000;
-  --color-success:        #16A34A;
 
   --color-overlay:        rgba(255, 255, 255, 0.25);
   --color-overlay-subtle: rgba(255, 255, 255, 0.19);
+
+  --color-correct:        #16A34A;
+  --color-present:        #FEA619;
+  --color-absent:         #A1A1AA;
 }
 
 .dark {
@@ -37,7 +40,11 @@
   --color-text-muted:     #A1A1AA;
 
   --color-accent:         #F59E0B;
-  --color-success:        #22C55E;
+  
+  --color-correct:        #16A34A;
+  --color-present:        #FEA619;
+  --color-absent:         #A1A1AA;
+
   --color-accent-dark:    #2A1700;
   --color-accent-bg:      rgba(42, 23, 0, 1);
   --color-accent-bg-80:   rgba(42, 23, 0, 0.8);
