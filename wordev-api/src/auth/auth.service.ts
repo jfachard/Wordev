@@ -36,9 +36,10 @@ export class AuthService {
         });
         
         const payload = { userId: user.id };
-        const accessToken = this.jwtService.sign(payload);
+        const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-        return { accessToken, username };
+        return { accessToken, refreshToken };
     }
 
     async findUserByEmail(email: string, password: string) {
@@ -71,11 +72,7 @@ export class AuthService {
             expiresIn: '7d',
         });
 
-        return {
-            accessToken,
-            refreshToken,
-            username: user.username,
-        };
+        return { accessToken, refreshToken };
     }
 
     async verifyToken(token: string) {
