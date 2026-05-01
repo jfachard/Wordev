@@ -27,7 +27,7 @@ export class GamesService {
             }
         });
 
-        return game;
+        return { ...game, wordLength: randomWord.word.length };
     }
 
     async submitGuess(userId: string, gameId: string, guess: string) {
