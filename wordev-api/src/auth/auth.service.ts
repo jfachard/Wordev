@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
@@ -36,9 +36,10 @@ export class AuthService {
         });
         
         const payload = { userId: user.id };
-        const accessToken = this.jwtService.sign(payload);
+        const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-        return { accessToken };
+        return { accessToken, refreshToken };
     }
 
     async findUserByEmail(email: string, password: string) {
@@ -59,7 +60,7 @@ export class AuthService {
         return userWithoutPassword;
     }
 
-    async login(user: { id: string; email: string }) {
+    async login(user: { id: string; email: string; username: string }) {
         const payload = { 
             userId: user.id
         };
@@ -71,10 +72,7 @@ export class AuthService {
             expiresIn: '7d',
         });
 
-        return {
-            accessToken,
-            refreshToken,
-        };
+        return { accessToken, refreshToken };
     }
 
     async verifyToken(token: string) {
