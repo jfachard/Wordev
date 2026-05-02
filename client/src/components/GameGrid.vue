@@ -19,12 +19,12 @@ const gridRows = computed((): Tile[][] => {
   const rows: Tile[][] = []
 
   for (const g of props.guesses) {
-    rows.push(g.letters.map((l, i) => ({ letter: l, result: g.result[i], state: 'revealed', index: i })))
+    rows.push(g.letters.map((l, i) => ({ letter: l, result: g.result[i] ?? null, state: 'revealed', index: i })))
   }
 
   if (props.revealingGuess) {
     rows.push(props.revealingGuess.letters.map((l, i) => ({
-      letter: l, result: props.revealingGuess!.result[i], state: 'revealing', index: i,
+      letter: l, result: props.revealingGuess!.result[i] ?? null, state: 'revealing', index: i,
     })))
   } else if (props.phase === 'playing') {
     rows.push(Array.from({ length: props.wordLength }, (_, i) => ({

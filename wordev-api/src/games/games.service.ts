@@ -101,6 +101,43 @@ export class GamesService {
         };
     }
 
+    async getHint(userId: string, gameId: string) {
+        const MAX_HINTS = 3;
+        const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+
+        if (!game || game.player1Id !== userId) {
+            throw new NotFoundException('Game not found or you are not the owner');
+        }
+        if (game.status === 'FINISHED') {
+            throw new BadRequestException('Game is already finished');
+        }
+        if (game.hintsUsed >= MAX_HINTS) {
+            throw new BadRequestException('No hints remaining');
+        }
+
+        const word = game.word.toUpperCase();
+        const alreadyHinted = new Set(game.hintedPositions);
+        const available = Array.from({ length: word.length }, (_, i) => i).filter(i => !alreadyHinted.has(i));
+
+        if (available.length === 0) {
+            throw new BadRequestException('No more positions to hint');
+        }
+
+        const position = available[Math.floor(Math.random() * available.length)];
+        const letter = word[position];
+        const newHintsUsed = game.hintsUsed + 1;
+
+        await this.prisma.game.update({
+            where: { id: gameId },
+            data: {
+                hintsUsed: newHintsUsed,
+                hintedPositions: [...game.hintedPositions, position],
+            },
+        });
+
+        return { position, letter, hintsUsed: newHintsUsed, hintsLeft: MAX_HINTS - newHintsUsed };
+    }
+
     async getGameStatus(userId: string, gameId: string) {
         const game = await this.prisma.game.findUnique({
             where: { id: gameId },

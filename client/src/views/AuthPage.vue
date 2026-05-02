@@ -96,7 +96,7 @@ function switchTab(t: 'login' | 'register') {
               type="text"
               placeholder="e.g. root_user"
               required
-              class="flex-1 bg-transparent outline-none text-sm font-mono"
+              class="flex-1 bg-transparent outline-none text-sm"
               :style="{ color: 'var(--color-text)' }"
             />
           </div>
@@ -120,7 +120,7 @@ function switchTab(t: 'login' | 'register') {
               type="email"
               :placeholder="tab === 'login' ? 'e.g. root@wordev.io' : 'e.g. root@wordev.io'"
               required
-              class="flex-1 bg-transparent outline-none text-sm font-mono"
+              class="flex-1 bg-transparent outline-none text-sm"
               :style="{ color: 'var(--color-text)' }"
             />
           </div>
@@ -155,7 +155,7 @@ function switchTab(t: 'login' | 'register') {
               placeholder="••••••••"
               required
               minlength="8"
-              class="flex-1 bg-transparent outline-none text-sm font-mono"
+              class="flex-1 bg-transparent outline-none text-sm"
               :style="{ color: 'var(--color-text)' }"
             />
             <button type="button" @click="showPassword = !showPassword" class="shrink-0">
@@ -189,7 +189,7 @@ function switchTab(t: 'login' | 'register') {
     </div>
 
     <!-- Status bar -->
-    <p class="mt-6 text-xs tracking-widest font-mono flex items-center gap-2" :style="{ color: 'var(--color-text-muted)' }">
+    <p class="mt-6 text-xs tracking-widest flex items-center gap-2" :style="{ color: 'var(--color-text-muted)' }">
       <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
       AUTHENTICATION SERVER: ONLINE
     </p>
