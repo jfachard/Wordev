@@ -4,6 +4,7 @@ import api from '@/services/api'
 import type { Guess, LetterResult, GamePhase } from '@/types/game'
 
 const MAX_ATTEMPTS = 6
+const MAX_HINTS = 3
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 export const useGameStore = defineStore('game', () => {
@@ -17,21 +18,25 @@ export const useGameStore = defineStore('game', () => {
   const currentInput = ref('')
   const error = ref('')
   const isSubmitting = ref(false)
+  const isHinting = ref(false)
   const revealedWord = ref<string | null>(null)
+  const hints = ref<{ position: number; letter: string }[]>([])
 
   const letterColors = computed(() => {
     const priority: Record<LetterResult, number> = { correct: 2, present: 1, absent: 0 }
     const map: Record<string, LetterResult> = {}
     for (const g of guesses.value) {
       g.letters.forEach((l, i) => {
-        const r = g.result[i]
-        if (!map[l] || priority[r] > priority[map[l]]) map[l] = r
+        const r = g.result[i]!
+        const current = map[l]
+        if (!current || priority[r] > priority[current]) map[l] = r
       })
     }
     return map
   })
 
   const attemptsLeft = computed(() => MAX_ATTEMPTS - guesses.value.length)
+  const hintsLeft = computed(() => MAX_HINTS - hints.value.length)
 
   function reset() {
     guesses.value = []
@@ -39,8 +44,10 @@ export const useGameStore = defineStore('game', () => {
     revealedTiles.value = new Set()
     currentInput.value = ''
     revealedWord.value = null
+    hints.value = []
     error.value = ''
     isSubmitting.value = false
+    isHinting.value = false
   }
 
   async function startGame() {
@@ -108,6 +115,19 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  async function requestHint() {
+    if (!gameId.value || phase.value !== 'playing' || hintsLeft.value <= 0 || isHinting.value) return
+    isHinting.value = true
+    try {
+      const res = await api.post('/games/solo/hint', { gameId: gameId.value })
+      hints.value.push({ position: res.data.position, letter: res.data.letter })
+    } catch (err: any) {
+      error.value = err.response?.data?.message ?? 'Could not get hint'
+    } finally {
+      isHinting.value = false
+    }
+  }
+
   function addLetter(l: string) {
     if (isSubmitting.value || currentInput.value.length >= wordLength.value) return
     currentInput.value += l
@@ -123,7 +143,7 @@ export const useGameStore = defineStore('game', () => {
     phase, selectedLength, wordLength, gameId,
     guesses, revealingGuess, revealedTiles,
     currentInput, error, isSubmitting, revealedWord,
-    letterColors, attemptsLeft,
-    startGame, submitGuess, addLetter, removeLetter, reset,
+    hints, letterColors, attemptsLeft, hintsLeft, isHinting,
+    startGame, submitGuess, addLetter, removeLetter, reset, requestHint,
   }
 })

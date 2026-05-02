@@ -2,7 +2,6 @@
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { LogOut, Menu, X } from '@lucide/vue'
-import ThemeToggle from '@/components/ThemeToggle.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
 
@@ -30,10 +29,10 @@ function logout() {
     <!-- Desktop -->
     <div class="hidden md:flex items-center gap-6">
       <template v-if="auth.isAuthenticated">
-        <span class="text-sm font-mono" :style="{ color: 'var(--color-text-muted)' }">
+        <span class="text-sm" :style="{ color: 'var(--color-text-muted)' }">
           {{ userStore.user?.username }}
         </span>
-        <span class="text-sm font-mono" :style="{ color: 'var(--color-accent)' }">
+        <span class="text-sm" :style="{ color: 'var(--color-accent)' }">
           {{ userStore.user?.elo }} ELO
         </span>
         <button @click="logout" class="flex items-center gap-1.5 transition-colors duration-200" :style="{ color: 'var(--color-text-muted)' }">
@@ -71,16 +70,16 @@ function logout() {
   >
     <template v-if="auth.isAuthenticated">
       <div class="flex items-center justify-between">
-        <span class="text-sm font-mono" :style="{ color: 'var(--color-text-muted)' }">
+        <span class="text-sm" :style="{ color: 'var(--color-text-muted)' }">
           {{ userStore.user?.username }}
         </span>
-        <span class="text-sm font-mono" :style="{ color: 'var(--color-accent)' }">
+        <span class="text-sm" :style="{ color: 'var(--color-accent)' }">
           {{ userStore.user?.elo }} ELO
         </span>
       </div>
       <button
         @click="logout"
-        class="flex items-center gap-2 text-sm font-mono uppercase tracking-widest transition-colors duration-200"
+        class="flex items-center gap-2 text-sm  uppercase tracking-widest transition-colors duration-200"
         :style="{ color: 'var(--color-text-muted)' }"
       >
         <LogOut class="w-4 h-4" />

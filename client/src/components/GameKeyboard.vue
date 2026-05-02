@@ -63,13 +63,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-2 w-full max-w-lg select-none">
+  <div class="flex flex-col items-center gap-2 w-full max-w-lg select-none justify-between">
 
     <!-- Layout selector -->
-    <div class="self-end">
+    <div class="">
       <select
         v-model="layout"
-        class="text-xs font-mono uppercase tracking-widest px-2 py-1 rounded-xs cursor-pointer outline-none"
+        class="text-xs uppercase tracking-widest px-2 py-1 rounded-xs cursor-pointer outline-none"
         :style="{
           backgroundColor: 'var(--color-surface)',
           color: 'var(--color-text-muted)',

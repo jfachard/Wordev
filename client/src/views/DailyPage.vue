@@ -7,7 +7,7 @@ import { Calendar } from '@lucide/vue'
     <div class="w-full max-w-4xl space-y-4">
       <div class="flex items-center gap-3" :style="{ color: 'var(--color-text-muted)' }">
         <Calendar class="w-5 h-5" />
-        <span class="text-sm font-mono uppercase tracking-widest">Daily Challenge</span>
+        <span class="text-sm uppercase tracking-widest">Daily Challenge</span>
       </div>
       <h1 class="text-4xl font-bold">Word of the Day</h1>
       <p :style="{ color: 'var(--color-text-muted)' }">One shot. Make it count.</p>

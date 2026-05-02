@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Game" ADD COLUMN     "hintedPositions" INTEGER[] DEFAULT ARRAY[]::INTEGER[],
+ADD COLUMN     "hintsUsed" INTEGER NOT NULL DEFAULT 0;

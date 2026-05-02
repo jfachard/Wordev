@@ -7,7 +7,7 @@ import { Trophy } from '@lucide/vue'
     <div class="w-full max-w-4xl space-y-4">
       <div class="flex items-center gap-3" :style="{ color: 'var(--color-text-muted)' }">
         <Trophy class="w-5 h-5" />
-        <span class="text-sm font-mono uppercase tracking-widest">Leaderboard</span>
+        <span class="text-sm  uppercase tracking-widest">Leaderboard</span>
       </div>
       <h1 class="text-4xl font-bold">Top Players</h1>
       <p :style="{ color: 'var(--color-text-muted)' }">The best devs, ranked by ELO.</p>

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import GameGrid from '@/components/GameGrid.vue'
-import GameKeyboard from '@/components/GameKeyboard.vue'
 import { useGameStore } from '@/stores/game'
 
 const game = useGameStore()
@@ -14,7 +12,7 @@ const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
       <div class="space-y-2">
         <span
           v-motion :initial="{ opacity: 0 }" :enter="{ opacity: 1, transition: { duration: 400 } }"
-          class="block text-sm font-mono uppercase tracking-widest"
+          class="block text-sm uppercase tracking-widest"
           :style="{ color: 'var(--color-text-muted)' }"
         >Solo Mode</span>
         <h1
@@ -34,7 +32,7 @@ const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
         <button
           v-for="n in LENGTH_OPTIONS" :key="n"
           @click="game.selectedLength = n"
-          class="w-12 h-12 font-bold font-mono rounded-xs transition-colors duration-150 cursor-pointer"
+          class="w-12 h-12 font-bold rounded-xs transition-colors duration-150 cursor-pointer"
           :style="{
             backgroundColor: game.selectedLength === n ? 'var(--color-accent)' : 'var(--color-surface)',
             color: game.selectedLength === n ? 'var(--color-accent-dark)' : 'var(--color-text)',
@@ -43,7 +41,7 @@ const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
         >{{ n }}</button>
         <button
           @click="game.selectedLength = null"
-          class="px-4 h-12 font-bold font-mono text-sm rounded-xs transition-colors duration-150 cursor-pointer"
+          class="px-4 h-12 font-bold text-sm rounded-xs transition-colors duration-150 cursor-pointer"
           :style="{
             backgroundColor: game.selectedLength === null ? 'var(--color-accent)' : 'var(--color-surface)',
             color: game.selectedLength === null ? 'var(--color-accent-dark)' : 'var(--color-text)',
@@ -52,7 +50,7 @@ const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
         >Random</button>
       </div>
 
-      <p v-if="game.error" class="text-sm font-mono" :style="{ color: 'var(--color-accent)' }">{{ game.error }}</p>
+      <p v-if="game.error" class="text-sm" :style="{ color: 'var(--color-accent)' }">{{ game.error }}</p>
 
       <button
         v-motion :initial="{ opacity: 0 }" :enter="{ opacity: 1, transition: { duration: 400, delay: 320 } }"
@@ -75,13 +73,21 @@ const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
       :phase="game.phase"
     />
 
-    <p class="text-sm font-mono" :style="{ color: 'var(--color-text-muted)' }">
+    <p class="text-sm" :style="{ color: 'var(--color-text-muted)' }">
       <template v-if="game.phase === 'playing'">
         {{ game.attemptsLeft }} attempt{{ game.attemptsLeft === 1 ? '' : 's' }} left
       </template>
     </p>
 
-    <p v-if="game.error" class="text-sm font-mono" :style="{ color: 'var(--color-accent)' }">{{ game.error }}</p>
+    <GameHint
+      v-if="game.phase === 'playing'"
+      :hints-left="game.hintsLeft"
+      :hints="game.hints"
+      :loading="game.isHinting"
+      @request="game.requestHint()"
+    />
+
+    <p v-if="game.error" class="text-sm" :style="{ color: 'var(--color-accent)' }">{{ game.error }}</p>
 
     <div
       v-if="game.phase === 'won' || game.phase === 'lost'"
@@ -96,7 +102,7 @@ const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
       </p>
       <button
         @click="game.phase = 'setup'"
-        class="px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs"
+        class="px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
         :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
       >Play Again</button>
     </div>

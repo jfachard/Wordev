@@ -58,10 +58,12 @@ model Game {
   player1Id       String
   player2Id       String?
   winnerId        String?
-  player1Attempts Int        @default(0)
-  player2Attempts Int        @default(0)
-  startedAt       DateTime   @default(now())
-  endedAt         DateTime?
+  player1Attempts  Int        @default(0)
+  player2Attempts  Int        @default(0)
+  hintsUsed        Int        @default(0)
+  hintedPositions  Int[]      @default([])
+  startedAt        DateTime   @default(now())
+  endedAt          DateTime?
 
   player1  User      @relation("Player1", fields: [player1Id], references: [id])
   player2  User?     @relation("Player2", fields: [player2Id], references: [id])

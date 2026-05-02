@@ -25,6 +25,12 @@ export class GamesController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('solo/hint')
+  async getHint(@Req() req, @Body('gameId') gameId: string) {
+    return this.gamesService.getHint(req.user.userId, gameId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('solo/:id')
   async getGameStatus(@Req() req, @Param('id') id: string) {
     const userId = req.user.userId;

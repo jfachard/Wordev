@@ -6,7 +6,7 @@
 
 :root {
   /* Light mode (default) */
-  --color-bg:             #FFFDF9;
+  --color-bg:             #FDF8F2;
   --color-surface:        #EAE4D9;
   --color-surface-raised: #DED8D0;
 
@@ -24,7 +24,7 @@
 
   --color-correct:        #16A34A;
   --color-present:        #FEA619;
-  --color-absent:         #A1A1AA;
+  --color-absent:         #97979c4b;
 }
 
 .dark {
@@ -43,7 +43,7 @@
   
   --color-correct:        #16A34A;
   --color-present:        #FEA619;
-  --color-absent:         #A1A1AA;
+  --color-absent:         #97979c4b;
 
   --color-accent-dark:    #2A1700;
   --color-accent-bg:      rgba(42, 23, 0, 1);

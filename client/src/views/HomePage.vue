@@ -16,18 +16,18 @@ const cards = [
   <main class="flex flex-col items-center justify-center flex-1 px-4 py-8 md:px-8 md:py-12">
     <div class="w-full max-w-4xl space-y-8">
       <div class="space-y-3">
-        <p v-if="userStore.user" class="text-sm font-mono" :style="{ color: 'var(--color-text-muted)' }">
+        <p v-if="userStore.user" class="text-sm" :style="{ color: 'var(--color-text-muted)' }">
           Welcome back, <span :style="{ color: 'var(--color-accent)' }">{{ userStore.user.username }}</span>
         </p>
         <h1 class="text-2xl font-bold md:text-4xl">Select Mode</h1>
-        <p class="max-w-xl" :style="{ color: 'var(--color-text-muted)' }">
+        <p class="max-w-xl italic text-sm" :style="{ color: 'var(--color-text-muted)' }">
           Select the game mode you want to play. Each mode offers a unique experience to help you sharpen your coding skills. Whether you prefer solo practice, daily challenges, or competitive 1v1 matches, there's something for everyone.
         </p>
       </div>
 
       <RouterLink
         to="/leaderboard"
-        class="inline-flex items-center gap-2 text-sm font-mono uppercase tracking-widest transition-colors duration-200"
+        class="inline-flex items-center gap-2 text-sm uppercase tracking-widest transition-colors duration-200"
         :style="{ color: 'var(--color-text-muted)' }"
       >
         <Trophy class="w-4 h-4" />
