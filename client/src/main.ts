@@ -8,6 +8,7 @@ import GameHint from './components/GameHint.vue'
 import GameKeyboard from './components/GameKeyboard.vue'
 import Navbar from './components/Navbar.vue'
 import ThemeToggle from './components/ThemeToggle.vue'
+import ComingSoon from './components/ComingSoon.vue'
 
 import './index.css'
 import 'vue3-toastify/dist/index.css'
@@ -31,5 +32,6 @@ app.component('GameHint', GameHint)
 app.component('GameKeyboard', GameKeyboard)
 app.component('Navbar', Navbar)
 app.component('ThemeToggle', ThemeToggle)
+app.component('ComingSoon', ComingSoon)
 
 app.mount('#app')
