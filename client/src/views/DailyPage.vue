@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Calendar } from '@lucide/vue'
+import ComingSoon from '@/components/ComingSoon.vue'
 </script>
 
 <template>
@@ -11,6 +12,7 @@ import { Calendar } from '@lucide/vue'
       </div>
       <h1 class="text-4xl font-bold">Word of the Day</h1>
       <p :style="{ color: 'var(--color-text-muted)' }">One shot. Make it count.</p>
+      <ComingSoon />
     </div>
   </main>
 </template>
