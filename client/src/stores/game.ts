@@ -103,16 +103,11 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  function buildShareText(won: boolean): string {
+  function saveShareText(won: boolean) {
     const date = new Date().toISOString().slice(0, 10)
     const emojiMap: Record<LetterResult, string> = { correct: '🟩', present: '🟨', absent: '⬛' }
     const grid = guesses.value.map(g => g.result.map(r => emojiMap[r]).join('')).join('\n')
-    return `Wordev Daily ${date}\n${won ? guesses.value.length : 'X'}/6\n\n${grid}`
-  }
-
-  function saveShareText(won: boolean) {
-    const text = buildShareText(won)
-    const date = new Date().toISOString().slice(0, 10)
+    const text = `Wordev Daily ${date}\n${won ? guesses.value.length : 'X'}/6\n\n${grid}`
     localStorage.setItem(`wordev-daily-share-${date}`, text)
     dailyShareText.value = text
   }

@@ -1,10 +1,28 @@
 <script setup lang="ts">
-import { watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { toast } from 'vue3-toastify'
 import { useGameStore } from '@/stores/game'
 
 const game = useGameStore()
 const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
+
+onMounted(() => {
+  game.mode = 'solo'
+})
+const isStarting = ref(false)
+
+const gridMaxWidth = computed(() => {
+  if (game.wordLength <= 5) return '330px'
+  if (game.wordLength <= 7) return '440px'
+  return '580px'
+})
+
+async function handleStart() {
+  if (isStarting.value) return
+  isStarting.value = true
+  await game.startGame()
+  isStarting.value = false
+}
 
 onMounted(() => {
   game.mode = 'solo'
@@ -42,6 +60,7 @@ watch(() => game.phase, (newPhase, oldPhase) => {
         >Pick a length from 4 to 10, or let us surprise you.</p>
       </div>
 
+      <!-- Length picker -->
       <div
         v-motion :initial="{ opacity: 0, y: 12 }" :enter="{ opacity: 1, y: 0, transition: { duration: 400, delay: 240 } }"
         class="flex flex-wrap gap-2"
@@ -67,19 +86,48 @@ watch(() => game.phase, (newPhase, oldPhase) => {
         >Random</button>
       </div>
 
+      <!-- Tile preview -->
+      <div
+        v-motion :initial="{ opacity: 0 }" :enter="{ opacity: 1, transition: { duration: 300, delay: 320 } }"
+        class="flex items-center gap-1.5 h-9"
+      >
+        <template v-if="game.selectedLength !== null">
+          <div
+            v-for="i in game.selectedLength" :key="i"
+            class="w-8 h-8 rounded-xs"
+            :style="{ border: '2px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }"
+          />
+        </template>
+        <p v-else class="text-sm" :style="{ color: 'var(--color-text-muted)' }">
+          Any length — we'll pick for you.
+        </p>
+      </div>
+
       <p v-if="game.error" class="text-sm" :style="{ color: 'var(--color-accent)' }">{{ game.error }}</p>
 
       <button
-        v-motion :initial="{ opacity: 0 }" :enter="{ opacity: 1, transition: { duration: 400, delay: 320 } }"
-        @click="game.startGame()"
-        class="px-8 py-3 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
+        v-motion :initial="{ opacity: 0 }" :enter="{ opacity: 1, transition: { duration: 400, delay: 400 } }"
+        @click="handleStart()"
+        :disabled="isStarting"
+        class="px-8 py-3 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed transition-opacity"
         :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
-      >Start Game</button>
+      >{{ isStarting ? 'Starting…' : 'Start Game' }}</button>
     </div>
   </main>
 
   <!-- GAME -->
-  <main v-else class="flex flex-col items-center gap-5 px-4 py-6">
+  <main v-else class="flex flex-col items-center gap-4 px-4 py-6">
+
+    <!-- Header: mode label + attempt counter -->
+    <div
+      class="flex items-center justify-between w-full px-1"
+      :style="{ maxWidth: gridMaxWidth }"
+    >
+      <span class="text-xs uppercase tracking-widest" :style="{ color: 'var(--color-text-muted)' }">Solo</span>
+      <span class="text-xs font-mono tabular-nums" :style="{ color: 'var(--color-text-muted)' }">
+        {{ game.guesses.length }}&thinsp;/&thinsp;6
+      </span>
+    </div>
 
     <GameGrid
       :guesses="game.guesses"
@@ -89,12 +137,6 @@ watch(() => game.phase, (newPhase, oldPhase) => {
       :word-length="game.wordLength"
       :phase="game.phase"
     />
-
-    <p class="text-sm" :style="{ color: 'var(--color-text-muted)' }">
-      <template v-if="game.phase === 'playing'">
-        {{ game.attemptsLeft }} attempt{{ game.attemptsLeft === 1 ? '' : 's' }} left
-      </template>
-    </p>
 
     <GameHint
       v-if="game.phase === 'playing'"
@@ -106,17 +148,25 @@ watch(() => game.phase, (newPhase, oldPhase) => {
 
     <p v-if="game.error" class="text-sm" :style="{ color: 'var(--color-accent)' }">{{ game.error }}</p>
 
+    <!-- Result -->
     <div
       v-if="game.phase === 'won' || game.phase === 'lost'"
       v-motion :initial="{ opacity: 0, y: -10 }" :enter="{ opacity: 1, y: 0, transition: { duration: 300 } }"
-      class="text-center space-y-3"
+      class="flex flex-col items-center gap-3 text-center"
     >
-      <p v-if="game.phase === 'won'" class="font-bold text-lg" :style="{ color: 'var(--color-correct)' }">
-        You got it in {{ game.guesses.length }} {{ game.guesses.length === 1 ? 'guess' : 'guesses' }}!
-      </p>
-      <p v-else class="font-bold text-lg">
-        The word was <span :style="{ color: 'var(--color-accent)' }">{{ game.revealedWord }}</span>
-      </p>
+      <div>
+        <p
+          class="text-3xl font-bold"
+          :style="{ color: game.phase === 'won' ? 'var(--color-correct)' : 'var(--color-text)' }"
+        >{{ game.guesses.length }}/6</p>
+        <p v-if="game.phase === 'won'" class="text-sm mt-1" :style="{ color: 'var(--color-text-muted)' }">
+          Got it!
+        </p>
+        <p v-else class="text-sm mt-1" :style="{ color: 'var(--color-text-muted)' }">
+          The word was
+          <span class="font-bold" :style="{ color: 'var(--color-accent)' }">{{ game.revealedWord?.toUpperCase() }}</span>
+        </p>
+      </div>
       <button
         @click="game.phase = 'setup'"
         class="px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"

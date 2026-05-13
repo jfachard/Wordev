@@ -6,9 +6,9 @@ import { useUserStore } from '@/stores/user'
 const userStore = useUserStore()
 
 const cards = [
-  { label: 'SOLO', desc: 'Infinite practice. No stakes.', highlight: false, icon: User, route: '/solo' },
-  { label: 'DAILY CHALLENGE', desc: 'The word of the day. One shot.', highlight: false, icon: Calendar, route: '/daily' },
-  { label: '1V1 VERSUS', desc: 'Race against another dev. Ranked.', highlight: true, icon: Swords, route: '/versus' },
+  { label: 'SOLO', desc: 'Infinite practice. No stakes.', highlight: false, icon: User, route: '/solo', comingSoon: false },
+  { label: 'DAILY CHALLENGE', desc: 'The word of the day. One shot.', highlight: false, icon: Calendar, route: '/daily', comingSoon: false },
+  { label: '1V1 VERSUS', desc: 'Race against another dev. Ranked.', highlight: true, icon: Swords, route: '/versus', comingSoon: true },
 ]
 </script>
 
@@ -53,6 +53,7 @@ const cards = [
               {{ card.desc }}
             </p>
           </div>
+          <ComingSoon v-if="card.comingSoon" class="mt-auto self-start" />
         </RouterLink>
       </div>
     </div>

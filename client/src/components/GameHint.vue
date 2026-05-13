@@ -12,20 +12,20 @@ defineEmits<{ request: [] }>()
 <template>
   <div class="flex flex-col items-center gap-2 w-full max-w-lg">
 
-    <div class="flex items-center justify-end w-full px-1">
+    <div class="flex items-center justify-center w-full px-1">
       <button
         @click="$emit('request')"
         :disabled="hintsLeft === 0 || loading"
-        class="flex px-1.5 py-1.5 text-xs uppercase tracking-widest rounded-xs transition-opacity duration-150"
+        class="flex items-center px-4 py-2 text-xs uppercase tracking-widest rounded-xs transition-opacity duration-150"
         :style="{
           backgroundColor: 'var(--color-surface)',
-          color: hintsLeft > 0 && !loading ? 'var(--color-text-muted)' : 'var(--color-border)',
-          border: '1px solid var(--color-border)',
+          color: hintsLeft > 0 && !loading ? 'var(--color-present)' : 'var(--color-border)',
+          border: `1px solid ${hintsLeft > 0 && !loading ? 'var(--color-present)' : 'var(--color-border)'}`,
           cursor: hintsLeft > 0 && !loading ? 'pointer' : 'not-allowed',
-          opacity: hintsLeft > 0 && !loading ? '1' : '0.5',
+          opacity: hintsLeft > 0 && !loading ? '1' : '0.45',
         }"
       >
-        <Lightbulb class="w-4 h-4 mr-2" /> Hint ({{ hintsLeft }})
+        <Lightbulb class="w-4 h-4 mr-2" /> Hint ({{ hintsLeft }} left)
       </button>
     </div>
 

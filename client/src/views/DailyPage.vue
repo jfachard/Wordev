@@ -99,6 +99,7 @@ onUnmounted(() => {
         <span class="text-sm uppercase tracking-widest">Daily Challenge</span>
       </div>
 
+
       <div v-if="game.alreadyPlayedData" class="space-y-1">
         <p v-if="game.alreadyPlayedData.won" class="text-xl font-bold" :style="{ color: 'var(--color-correct)' }">
           You won in {{ game.alreadyPlayedData.attempts }}/6!
