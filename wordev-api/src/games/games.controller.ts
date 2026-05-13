@@ -7,6 +7,12 @@ export class GamesController {
   constructor(private readonly gamesService: GamesService) {}
 
   @UseGuards(JwtAuthGuard)
+  @Post('daily/start')
+  async startDailyGame(@Req() req) {
+    return this.gamesService.startDailyGame(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('solo/start')
   async startSoloGame(@Req() req, @Body('length') length?: number) {
     const userId = req.user.userId;
