@@ -7,6 +7,12 @@ export class GamesController {
   constructor(private readonly gamesService: GamesService) {}
 
   @UseGuards(JwtAuthGuard)
+  @Get('daily/today')
+  async getDailyStatus(@Req() req) {
+    return this.gamesService.getDailyStatus(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('daily/start')
   async startDailyGame(@Req() req) {
     return this.gamesService.startDailyGame(req.user.userId);

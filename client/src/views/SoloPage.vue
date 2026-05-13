@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { watch, onMounted } from 'vue'
 import { toast } from 'vue3-toastify'
 import { useGameStore } from '@/stores/game'
 
 const game = useGameStore()
 const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
+
+onMounted(() => {
+  game.mode = 'solo'
+})
 
 watch(() => game.phase, (newPhase, oldPhase) => {
   if (newPhase === 'playing' && oldPhase === 'setup') {
