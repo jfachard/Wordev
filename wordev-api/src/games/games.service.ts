@@ -1,10 +1,50 @@
 import { Injectable, InternalServerErrorException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WordService } from '../word/word.service';
+import { DailyWordService } from '../daily-word/daily-word.service';
 
 @Injectable()
 export class GamesService {
-    constructor(private prisma: PrismaService, private wordService: WordService) {}
+    constructor(
+        private prisma: PrismaService,
+        private wordService: WordService,
+        private dailyWordService: DailyWordService,
+    ) {}
+
+    async startDailyGame(userId: string) {
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const existing = await this.prisma.game.findFirst({
+            where: {
+                player1Id: userId,
+                mode: 'DAILY',
+                startedAt: { gte: startOfDay },
+            },
+        });
+
+        if (existing) {
+            throw new BadRequestException('You have already played today\'s daily challenge');
+        }
+
+        const dailyWord = await this.dailyWordService.getToday();
+
+        const game = await this.prisma.game.create({
+            data: {
+                mode: 'DAILY',
+                status: 'ACTIVE',
+                word: dailyWord.word,
+                player1Id: userId,
+            },
+            select: {
+                id: true,
+                mode: true,
+                status: true,
+            },
+        });
+
+        return { gameId: game.id, mode: game.mode, status: game.status };
+    }
 
     async startSoloGame(userId: string, length?: number) {
         const randomWord = await this.wordService.getRandomWord(length);
