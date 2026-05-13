@@ -5,6 +5,10 @@ import { useGameStore } from '@/stores/game'
 
 const game = useGameStore()
 const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
+
+onMounted(() => {
+  game.mode = 'solo'
+})
 const isStarting = ref(false)
 
 const gridMaxWidth = computed(() => {
