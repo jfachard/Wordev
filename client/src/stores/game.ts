@@ -9,6 +9,7 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 export const useGameStore = defineStore('game', () => {
   const phase = ref<GamePhase>('setup')
+  const mode = ref<'solo' | 'daily'>('solo')
   const selectedLength = ref<number | null>(null)
   const wordLength = ref(5)
   const gameId = ref<string | null>(null)
@@ -21,6 +22,8 @@ export const useGameStore = defineStore('game', () => {
   const isHinting = ref(false)
   const revealedWord = ref<string | null>(null)
   const hints = ref<{ position: number; letter: string }[]>([])
+  const alreadyPlayedData = ref<{ won: boolean; attempts: number } | null>(null)
+  const dailyShareText = ref<string | null>(null)
 
   const letterColors = computed(() => {
     const priority: Record<LetterResult, number> = { correct: 2, present: 1, absent: 0 }
@@ -53,15 +56,69 @@ export const useGameStore = defineStore('game', () => {
   async function startGame() {
     try {
       error.value = ''
-      const body: { length?: number } = {}
-      if (selectedLength.value !== null) body.length = selectedLength.value
-      const res = await api.post('/games/solo/start', body)
-      gameId.value = res.data.id
-      wordLength.value = res.data.wordLength
+      if (mode.value === 'daily') {
+        const res = await api.post('/games/daily/start')
+        gameId.value = res.data.gameId
+        wordLength.value = res.data.wordLength
+      } else {
+        const body: { length?: number } = {}
+        if (selectedLength.value !== null) body.length = selectedLength.value
+        const res = await api.post('/games/solo/start', body)
+        gameId.value = res.data.id
+        wordLength.value = res.data.wordLength
+      }
       reset()
       phase.value = 'playing'
+    } catch (err: any) {
+      error.value = err.response?.data?.message ?? 'Failed to start game. Try again.'
+    }
+  }
+
+  async function checkDailyStatus() {
+    phase.value = 'loading'
+    try {
+      const res = await api.get('/games/daily/today')
+      const data = res.data
+      if (!data.hasPlayed) {
+        phase.value = 'setup'
+        return
+      }
+      if (data.status === 'ACTIVE') {
+        gameId.value = data.gameId
+        wordLength.value = data.wordLength
+        hints.value = (data.hintedPositions as number[]).map((pos: number, i: number) => ({
+          position: pos,
+          letter: data.hintedLetters[i] as string,
+        }))
+        phase.value = 'playing'
+      } else {
+        alreadyPlayedData.value = { won: !!data.winnerId, attempts: data.attempts }
+        const today = new Date().toISOString().slice(0, 10)
+        dailyShareText.value = localStorage.getItem(`wordev-daily-share-${today}`)
+        phase.value = 'already_played'
+      }
     } catch {
-      error.value = 'Failed to start game. Try again.'
+      error.value = 'Could not check daily status.'
+      phase.value = 'setup'
+    }
+  }
+
+  function saveShareText(won: boolean) {
+    const date = new Date().toISOString().slice(0, 10)
+    const emojiMap: Record<LetterResult, string> = { correct: '🟩', present: '🟨', absent: '⬛' }
+    const grid = guesses.value.map(g => g.result.map(r => emojiMap[r]).join('')).join('\n')
+    const text = `Wordev Daily ${date}\n${won ? guesses.value.length : 'X'}/6\n\n${grid}`
+    localStorage.setItem(`wordev-daily-share-${date}`, text)
+    dailyShareText.value = text
+  }
+
+  async function shareResult(): Promise<boolean> {
+    if (!dailyShareText.value) return false
+    try {
+      await navigator.clipboard.writeText(dailyShareText.value)
+      return true
+    } catch {
+      return false
     }
   }
 
@@ -101,10 +158,12 @@ export const useGameStore = defineStore('game', () => {
 
       if (isFinished) {
         if (isWon) {
+          if (mode.value === 'daily') saveShareText(true)
           phase.value = 'won'
         } else {
           const statusRes = await api.get(`/games/solo/${gameId.value}`)
           revealedWord.value = statusRes.data.word
+          if (mode.value === 'daily') saveShareText(false)
           phase.value = 'lost'
         }
       }
@@ -140,10 +199,12 @@ export const useGameStore = defineStore('game', () => {
   }
 
   return {
-    phase, selectedLength, wordLength, gameId,
+    phase, mode, selectedLength, wordLength, gameId,
     guesses, revealingGuess, revealedTiles,
     currentInput, error, isSubmitting, revealedWord,
     hints, letterColors, attemptsLeft, hintsLeft, isHinting,
+    alreadyPlayedData, dailyShareText,
     startGame, submitGuess, addLetter, removeLetter, reset, requestHint,
+    checkDailyStatus, shareResult,
   }
 })

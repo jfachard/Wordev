@@ -43,7 +43,52 @@ export class GamesService {
             },
         });
 
-        return { gameId: game.id, mode: game.mode, status: game.status };
+        return { gameId: game.id, mode: game.mode, status: game.status, wordLength: dailyWord.length };
+    }
+
+    async getDailyStatus(userId: string) {
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const game = await this.prisma.game.findFirst({
+            where: {
+                player1Id: userId,
+                mode: 'DAILY',
+                startedAt: { gte: startOfDay },
+            },
+            select: {
+                id: true,
+                status: true,
+                player1Attempts: true,
+                winnerId: true,
+                hintsUsed: true,
+                hintedPositions: true,
+                word: true,
+            },
+        });
+
+        if (!game) return { hasPlayed: false };
+
+        if (game.status === 'ACTIVE') {
+            return {
+                hasPlayed: true,
+                gameId: game.id,
+                status: 'ACTIVE',
+                attempts: game.player1Attempts,
+                hintsUsed: game.hintsUsed,
+                wordLength: game.word.length,
+                hintedPositions: game.hintedPositions,
+                hintedLetters: game.hintedPositions.map(pos => game.word.toUpperCase()[pos]),
+            };
+        }
+
+        return {
+            hasPlayed: true,
+            gameId: game.id,
+            status: 'FINISHED',
+            attempts: game.player1Attempts,
+            winnerId: game.winnerId,
+        };
     }
 
     async startSoloGame(userId: string, length?: number) {
