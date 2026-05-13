@@ -11,6 +11,7 @@ import { Swords } from '@lucide/vue'
       </div>
       <h1 class="text-4xl font-bold">Race to Win</h1>
       <p :style="{ color: 'var(--color-text-muted)' }">Ranked. Real-time. No mercy.</p>
+      <ComingSoon />
     </div>
   </main>
 </template>

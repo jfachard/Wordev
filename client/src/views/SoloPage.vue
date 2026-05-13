@@ -1,8 +1,25 @@
 <script setup lang="ts">
+import { watch, onMounted } from 'vue'
+import { toast } from 'vue3-toastify'
 import { useGameStore } from '@/stores/game'
 
 const game = useGameStore()
 const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
+
+onMounted(() => {
+  game.mode = 'solo'
+})
+
+watch(() => game.phase, (newPhase, oldPhase) => {
+  if (newPhase === 'playing' && oldPhase === 'setup') {
+    toast('Game started! Good luck!', { type: 'info' })
+  } else if (newPhase === 'won') {
+    const count = game.guesses.length
+    toast(`You got it in ${count} ${count === 1 ? 'guess' : 'guesses'}!`, { type: 'success' })
+  } else if (newPhase === 'lost') {
+    toast(`The word was "${game.revealedWord?.toUpperCase()}"`, { type: 'error', autoClose: 5000 })
+  }
+})
 </script>
 
 <template>

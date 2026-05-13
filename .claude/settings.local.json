@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Program Files/PostgreSQL/15/**)",
+      "Read(//c/Program Files/PostgreSQL/17/**)"
+    ]
+  }
+}

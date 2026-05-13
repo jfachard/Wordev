@@ -11,6 +11,7 @@ import { Trophy } from '@lucide/vue'
       </div>
       <h1 class="text-4xl font-bold">Top Players</h1>
       <p :style="{ color: 'var(--color-text-muted)' }">The best devs, ranked by ELO.</p>
+      <ComingSoon />
     </div>
   </main>
 </template>
