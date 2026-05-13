@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Swords } from '@lucide/vue'
-import ComingSoon from '@/components/ComingSoon.vue'
 </script>
 
 <template>

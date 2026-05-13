@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Trophy } from '@lucide/vue'
-import ComingSoon from '@/components/ComingSoon.vue'
 </script>
 
 <template>
