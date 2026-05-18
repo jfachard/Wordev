@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { toast } from 'vue3-toastify'
-import { Calendar, Share2, Timer } from '@lucide/vue'
+import { Calendar, Share2, Check, Timer } from '@lucide/vue'
 import { useGameStore } from '@/stores/game'
 
 const game = useGameStore()
 const countdown = ref('')
+const shareState = ref<'idle' | 'copied'>('idle')
 let countdownInterval: ReturnType<typeof setInterval> | null = null
 
 const dailyGrid = computed(() => game.dailyShareText?.split('\n\n')[1] ?? null)
@@ -22,9 +23,13 @@ function updateCountdown() {
 }
 
 async function share() {
-  const ok = await game.shareResult()
-  if (ok) toast('Result copied to clipboard!', { type: 'success' })
-  else toast('Could not copy to clipboard', { type: 'error' })
+  const result = await game.shareResult()
+  if (result === 'copied') {
+    shareState.value = 'copied'
+    setTimeout(() => { shareState.value = 'idle' }, 2000)
+  } else if (result === 'failed') {
+    toast('Could not share result', { type: 'error' })
+  }
 }
 
 watch(() => game.phase, (newPhase, oldPhase) => {
@@ -39,6 +44,9 @@ watch(() => game.phase, (newPhase, oldPhase) => {
 })
 
 onMounted(() => {
+  if (game.mode !== 'daily') {
+    game.reset()
+  }
   game.mode = 'daily'
   game.checkDailyStatus()
   updateCountdown()
@@ -118,11 +126,12 @@ onUnmounted(() => {
       <button
         v-if="game.dailyShareText"
         @click="share()"
-        class="flex items-center gap-2 mx-auto px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
+        class="flex items-center gap-2 mx-auto px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer transition-colors duration-150"
         :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
       >
-        <Share2 class="w-4 h-4" />
-        Share Result
+        <Check v-if="shareState === 'copied'" class="w-4 h-4" />
+        <Share2 v-else class="w-4 h-4" />
+        {{ shareState === 'copied' ? 'Copied!' : 'Share Result' }}
       </button>
 
       <div class="flex items-center justify-center gap-2 text-sm" :style="{ color: 'var(--color-text-muted)' }">
@@ -177,14 +186,21 @@ onUnmounted(() => {
         The word was <span :style="{ color: 'var(--color-accent)' }">{{ game.revealedWord }}</span>
       </p>
 
+      <pre
+        v-if="dailyGrid"
+        class="text-2xl leading-tight font-mono"
+        style="width: fit-content"
+      >{{ dailyGrid }}</pre>
+
       <button
         v-if="game.dailyShareText"
         @click="share()"
-        class="flex items-center gap-2 px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
+        class="flex items-center gap-2 px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer transition-colors duration-150"
         :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
       >
-        <Share2 class="w-4 h-4" />
-        Share Result
+        <Check v-if="shareState === 'copied'" class="w-4 h-4" />
+        <Share2 v-else class="w-4 h-4" />
+        {{ shareState === 'copied' ? 'Copied!' : 'Share Result' }}
       </button>
 
       <div class="flex items-center gap-2 text-sm" :style="{ color: 'var(--color-text-muted)' }">

@@ -112,13 +112,17 @@ export const useGameStore = defineStore('game', () => {
     dailyShareText.value = text
   }
 
-  async function shareResult(): Promise<boolean> {
-    if (!dailyShareText.value) return false
+  async function shareResult(): Promise<'shared' | 'copied' | 'failed'> {
+    if (!dailyShareText.value) return 'failed'
     try {
+      if (navigator.share) {
+        await navigator.share({ text: dailyShareText.value })
+        return 'shared'
+      }
       await navigator.clipboard.writeText(dailyShareText.value)
-      return true
+      return 'copied'
     } catch {
-      return false
+      return 'failed'
     }
   }
 
