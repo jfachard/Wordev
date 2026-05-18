@@ -7,6 +7,10 @@ const game = useGameStore()
 const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
 
 onMounted(() => {
+  if (game.mode !== 'solo') {
+    game.reset()
+    game.phase = 'setup'
+  }
   game.mode = 'solo'
 })
 const isStarting = ref(false)
@@ -23,10 +27,6 @@ async function handleStart() {
   await game.startGame()
   isStarting.value = false
 }
-
-onMounted(() => {
-  game.mode = 'solo'
-})
 
 watch(() => game.phase, (newPhase, oldPhase) => {
   if (newPhase === 'playing' && oldPhase === 'setup') {
