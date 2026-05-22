@@ -8,9 +8,10 @@ import { UsersModule } from './users/users.module';
 import { GamesModule } from './games/games.module';
 import { WordModule } from './word/word.module';
 import { DailyWordModule } from './daily-word/daily-word.module';
+import { GameModule } from './game/game.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), PrismaModule, AuthModule, UsersModule, GamesModule, WordModule, DailyWordModule],
+  imports: [ScheduleModule.forRoot(), PrismaModule, AuthModule, UsersModule, GamesModule, WordModule, DailyWordModule, GameModule],
   controllers: [AppController],
   providers: [AppService],
 })
