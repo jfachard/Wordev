@@ -7,6 +7,7 @@ import { DailyWordModule } from '../daily-word/daily-word.module';
 @Module({
   imports: [WordModule, DailyWordModule],
   controllers: [GamesController],
-  providers: [GamesService]
+  providers: [GamesService],
+  exports: [GamesService],
 })
 export class GamesModule {}
