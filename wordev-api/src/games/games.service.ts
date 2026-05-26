@@ -223,6 +223,27 @@ export class GamesService {
         return { position, letter, hintsUsed: newHintsUsed, hintsLeft: MAX_HINTS - newHintsUsed };
     }
 
+    async startVersusGame(player1Id: string, player2Id: string) {
+        const word = await this.wordService.getRandomWord();
+
+        if (!word) {
+            throw new InternalServerErrorException('Could not retrieve a random word');
+        }
+
+        const game = await this.prisma.game.create({
+            data: {
+                mode: 'VERSUS',
+                status: 'ACTIVE',
+                word: word.word,
+                player1Id,
+                player2Id,
+            },
+            select: { id: true },
+        });
+
+        return { id: game.id, wordLength: word.word.length };
+    }
+
     async getGameStatus(userId: string, gameId: string) {
         const game = await this.prisma.game.findUnique({
             where: { id: gameId },
