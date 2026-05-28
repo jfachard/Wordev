@@ -67,6 +67,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const game = await this.gamesService.startVersusGame(match.p1.userId, match.p2.userId);
 
+    this.server.in(match.p1.socketId).socketsJoin(`game:${game.id}`);
+    this.server.in(match.p2.socketId).socketsJoin(`game:${game.id}`);
+
     this.server.to(match.p1.socketId).emit('game_start', {
       gameId: game.id,
       wordLength: game.wordLength,
@@ -79,6 +82,24 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       opponentUsername: game.player1.username,
       opponentElo: game.player1.elo,
     });
+  }
+
+  @SubscribeMessage('submit_guess')
+  async handleSubmitGuess(
+    client: Socket,
+    payload: { gameId: string; guess: string },
+  ) {
+    const userId = client.data.userId;
+    const { gameId, guess } = payload;
+
+    try {
+      const { result, attempts, isWin } = await this.gamesService.submitVersusGuess(userId, gameId, guess);
+
+      client.emit('guess_result', { result, isWin });
+      client.to(`game:${gameId}`).emit('opponent_progress', { attempts });
+    } catch (e: any) {
+      client.emit('guess_error', { message: e.message });
+    }
   }
 
   @SubscribeMessage('leave_queue')

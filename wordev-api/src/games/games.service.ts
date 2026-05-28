@@ -252,6 +252,65 @@ export class GamesService {
         };
     }
 
+    async submitVersusGuess(userId: string, gameId: string, guess: string) {
+        const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+
+        if (!game || (game.player1Id !== userId && game.player2Id !== userId)) {
+            throw new NotFoundException('Game not found or you are not a player');
+        }
+
+        if (game.status !== 'ACTIVE') {
+            throw new BadRequestException('Game is not active');
+        }
+
+        const targetWord = game.word.toUpperCase();
+        const guessWord = guess.toUpperCase();
+
+        if (guessWord.length !== targetWord.length) {
+            throw new BadRequestException(`Guess must be exactly ${targetWord.length} characters long`);
+        }
+
+        const isPlayer1 = game.player1Id === userId;
+        const currentAttempts = isPlayer1 ? game.player1Attempts : game.player2Attempts;
+
+        const result: { letter: string; status: string }[] = Array.from({ length: targetWord.length }, (_, i) => ({
+            letter: guessWord[i],
+            status: 'absent',
+        }));
+        const targetLetterCounts: Record<string, number> = {};
+
+        for (const char of targetWord) {
+            targetLetterCounts[char] = (targetLetterCounts[char] || 0) + 1;
+        }
+
+        for (let i = 0; i < targetWord.length; i++) {
+            if (guessWord[i] === targetWord[i]) {
+                result[i].status = 'correct';
+                targetLetterCounts[guessWord[i]]--;
+            }
+        }
+
+        for (let i = 0; i < targetWord.length; i++) {
+            if (result[i].status !== 'correct' && targetLetterCounts[guessWord[i]] > 0) {
+                result[i].status = 'present';
+                targetLetterCounts[guessWord[i]]--;
+            }
+        }
+
+        const newAttempts = currentAttempts + 1;
+        const isWin = guessWord === targetWord;
+
+        await this.prisma.game.update({
+            where: { id: gameId },
+            data: {
+                ...(isPlayer1 ? { player1Attempts: newAttempts } : { player2Attempts: newAttempts }),
+                ...(isWin ? { status: 'FINISHED', winnerId: userId, endedAt: new Date() } : {}),
+            },
+        });
+
+        return { result, attempts: newAttempts, isWin };
+    }
+
     async getGameStatus(userId: string, gameId: string) {
         const game = await this.prisma.game.findUnique({
             where: { id: gameId },
