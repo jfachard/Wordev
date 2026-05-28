@@ -45,6 +45,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (client.data.userId) {
       this.queueService.leave(client.data.userId);
     }
+    if (client.data.gameId && client.data.opponentId) {
+      void this.resolveDisconnect(client.data.gameId, client.data.opponentId, client.data.userId);
+    }
+  }
+
+  private async resolveDisconnect(gameId: string, opponentId: string, disconnectedUserId: string) {
+    const gameOver = await this.gamesService.endVersusGame(gameId, opponentId, disconnectedUserId);
+    if (gameOver) {
+      this.server.to(`game:${gameId}`).emit('game_over', { ...gameOver, disconnected: true });
+    }
   }
 
   @SubscribeMessage('join_queue')
@@ -70,6 +80,14 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.in(match.p1.socketId).socketsJoin(`game:${game.id}`);
     this.server.in(match.p2.socketId).socketsJoin(`game:${game.id}`);
 
+    client.data.gameId = game.id;
+    client.data.opponentId = match.p2.userId;
+    const p2Socket = this.server.sockets.sockets.get(match.p2.socketId);
+    if (p2Socket) {
+      p2Socket.data.gameId = game.id;
+      p2Socket.data.opponentId = match.p1.userId;
+    }
+
     this.server.to(match.p1.socketId).emit('game_start', {
       gameId: game.id,
       wordLength: game.wordLength,
@@ -93,10 +111,20 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { gameId, guess } = payload;
 
     try {
-      const { result, attempts, isWin } = await this.gamesService.submitVersusGuess(userId, gameId, guess);
+      const { result, attempts, isWin, opponentId } = await this.gamesService.submitVersusGuess(userId, gameId, guess);
 
       client.emit('guess_result', { result, isWin });
       client.to(`game:${gameId}`).emit('opponent_progress', { attempts });
+
+      const isLoss = !isWin && attempts >= 6;
+      if (isWin || isLoss) {
+        const winnerId = isWin ? userId : opponentId;
+        const loserId = isWin ? opponentId : userId;
+        const gameOver = await this.gamesService.endVersusGame(gameId, winnerId, loserId);
+        if (gameOver) {
+          this.server.to(`game:${gameId}`).emit('game_over', gameOver);
+        }
+      }
     } catch (e: any) {
       client.emit('guess_error', { message: e.message });
     }
