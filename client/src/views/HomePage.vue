@@ -8,7 +8,7 @@ const userStore = useUserStore()
 const cards = [
   { label: 'SOLO', desc: 'Infinite practice. No stakes.', highlight: false, icon: User, route: '/solo', comingSoon: false },
   { label: 'DAILY CHALLENGE', desc: 'The word of the day. One shot.', highlight: false, icon: Calendar, route: '/daily', comingSoon: false },
-  { label: '1V1 VERSUS', desc: 'Race against another dev. Ranked.', highlight: true, icon: Swords, route: '/versus', comingSoon: true },
+  { label: '1V1 VERSUS', desc: 'Race against another dev. Ranked.', highlight: true, icon: Swords, route: '/versus', comingSoon: false },
 ]
 </script>
 
