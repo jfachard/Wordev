@@ -7,7 +7,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 function decodeUserId(token: string): string | null {
   try {
-    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    const part = token.split('.')[1]
+    if (!part) return null
+    const base64 = part.replace(/-/g, '+').replace(/_/g, '/')
     return (JSON.parse(atob(base64)) as { userId?: string }).userId ?? null
   } catch {
     return null
