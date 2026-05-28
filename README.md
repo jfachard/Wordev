@@ -147,10 +147,10 @@ VITE_SOCKET_URL=http://localhost:3000
 - [x] Project setup — NestJS + Prisma + PostgreSQL
 - [x] Auth — Register, Login, JWT guard
 - [x] Solo mode — Backend + UI
-- [ ] Daily mode — Cron job + UI
-- [ ] Versus mode — Socket.io gateway + matchmaking + ELO
-- [ ] Leaderboard — Global ranking + user stats
-- [ ] Deployment — Railway + Vercel
+- [x] Daily mode — Cron job + UI
+- [x] Versus mode — Socket.io gateway + matchmaking + ELO
+- [x] Leaderboard — Global ranking + user stats
+- [x] Deployment — Railway + Vercel
 
 ---
 
