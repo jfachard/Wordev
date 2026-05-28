@@ -34,7 +34,7 @@ export class AuthController {
         if (payload instanceof UnauthorizedException) {
             throw payload;
         }
-        const user = await this.authService.findUserById(payload.sub);
+        const user = await this.authService.findUserById(payload.userId);
 
         if(user instanceof UnauthorizedException){
             throw user;
