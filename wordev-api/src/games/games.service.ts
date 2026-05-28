@@ -299,16 +299,69 @@ export class GamesService {
 
         const newAttempts = currentAttempts + 1;
         const isWin = guessWord === targetWord;
+        const opponentId = isPlayer1 ? game.player2Id! : game.player1Id;
 
         await this.prisma.game.update({
             where: { id: gameId },
             data: {
                 ...(isPlayer1 ? { player1Attempts: newAttempts } : { player2Attempts: newAttempts }),
-                ...(isWin ? { status: 'FINISHED', winnerId: userId, endedAt: new Date() } : {}),
             },
         });
 
-        return { result, attempts: newAttempts, isWin };
+        return { result, attempts: newAttempts, isWin, opponentId };
+    }
+
+    async endVersusGame(gameId: string, winnerId: string, loserId: string) {
+        const game = await this.prisma.game.findUnique({
+            where: { id: gameId },
+            include: {
+                player1: { select: { id: true, elo: true } },
+                player2: { select: { id: true, elo: true } },
+            },
+        });
+
+        if (!game || game.status !== 'ACTIVE') return null;
+
+        const winner = game.player1Id === winnerId ? game.player1 : game.player2!;
+        const loser = game.player1Id === loserId ? game.player1 : game.player2!;
+
+        const K = 32;
+        const expectedWinner = 1 / (1 + Math.pow(10, (loser.elo - winner.elo) / 400));
+        const winnerEloDelta = Math.round(K * (1 - expectedWinner));
+        const loserEloDelta = Math.round(K * (0 - (1 - expectedWinner)));
+
+        const winnerNewElo = winner.elo + winnerEloDelta;
+        const loserNewElo = loser.elo + loserEloDelta;
+
+        await this.prisma.$transaction([
+            this.prisma.game.update({
+                where: { id: gameId },
+                data: { status: 'FINISHED', winnerId, endedAt: new Date() },
+            }),
+            this.prisma.user.update({
+                where: { id: winnerId },
+                data: { elo: winnerNewElo, wins: { increment: 1 } },
+            }),
+            this.prisma.user.update({
+                where: { id: loserId },
+                data: { elo: loserNewElo, losses: { increment: 1 } },
+            }),
+            this.prisma.eloStat.create({
+                data: { userId: winnerId, gameId, eloBefore: winner.elo, eloAfter: winnerNewElo },
+            }),
+            this.prisma.eloStat.create({
+                data: { userId: loserId, gameId, eloBefore: loser.elo, eloAfter: loserNewElo },
+            }),
+        ]);
+
+        return {
+            winnerId,
+            word: game.word,
+            players: {
+                [winnerId]: { eloBefore: winner.elo, eloAfter: winnerNewElo, eloDelta: winnerEloDelta },
+                [loserId]: { eloBefore: loser.elo, eloAfter: loserNewElo, eloDelta: loserEloDelta },
+            },
+        };
     }
 
     async getGameStatus(userId: string, gameId: string) {
