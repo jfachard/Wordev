@@ -12,7 +12,7 @@ import { QueueService } from './queue.service';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.CORS_ORIGIN,
+    origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
     credentials: true,
   },
 })
@@ -36,6 +36,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const payload = await this.authService.verifyToken(token);
       client.data.userId = payload.userId;
+      client.emit('authenticated');
     } catch {
       client.disconnect();
     }

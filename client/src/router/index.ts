@@ -11,6 +11,7 @@ const router = createRouter({
     { path: '/solo', component: () => import('@/views/SoloPage.vue'), meta: { requiresAuth: true } },
     { path: '/daily', component: () => import('@/views/DailyPage.vue'), meta: { requiresAuth: true } },
     { path: '/versus', component: () => import('@/views/VersusPage.vue'), meta: { requiresAuth: true } },
+    { path: '/versus/game', component: () => import('@/views/VersusGamePage.vue'), meta: { requiresAuth: true } },
     { path: '/leaderboard', component: () => import('@/views/LeaderboardPage.vue'), meta: { requiresAuth: true } },
   ],
 })

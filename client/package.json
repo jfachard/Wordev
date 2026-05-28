@@ -22,6 +22,7 @@
     "axios": "^1.15.2",
     "pinia": "^3.0.4",
     "simple-keyboard": "^3.8.137",
+    "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.2.4",
     "vue": "^3.5.32",
     "vue-router": "^5.0.4",
