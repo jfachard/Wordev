@@ -20,11 +20,13 @@
     "@tailwindcss/vite": "^4.2.4",
     "@vueuse/motion": "^3.0.3",
     "axios": "^1.15.2",
+    "chart.js": "^4.5.1",
     "pinia": "^3.0.4",
     "simple-keyboard": "^3.8.137",
     "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.2.4",
     "vue": "^3.5.32",
+    "vue-chartjs": "^5.3.3",
     "vue-router": "^5.0.4",
     "vue3-toastify": "^0.2.9"
   },

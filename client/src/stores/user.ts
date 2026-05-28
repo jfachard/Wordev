@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import api from '@/services/api'
 
 export interface User {
+  id: string
   email: string
   username: string
   elo: number
@@ -14,6 +15,7 @@ export const useUserStore = defineStore('user', () => {
   const fetchProfile = async () => {
     const response = await api.get('/users/me')
     user.value = {
+      id: response.data.id,
       email: response.data.email,
       username: response.data.username,
       elo: response.data.elo,
