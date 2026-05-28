@@ -238,10 +238,18 @@ export class GamesService {
                 player1Id,
                 player2Id,
             },
-            select: { id: true },
+            include: {
+                player1: { select: { username: true, elo: true } },
+                player2: { select: { username: true, elo: true } },
+            },
         });
 
-        return { id: game.id, wordLength: word.word.length };
+        return {
+            id: game.id,
+            wordLength: word.word.length,
+            player1: { username: game.player1.username, elo: game.player1.elo },
+            player2: { username: game.player2!.username, elo: game.player2!.elo },
+        };
     }
 
     async getGameStatus(userId: string, gameId: string) {

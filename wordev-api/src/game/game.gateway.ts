@@ -70,12 +70,14 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(match.p1.socketId).emit('game_start', {
       gameId: game.id,
       wordLength: game.wordLength,
-      opponentId: match.p2.userId,
+      opponentUsername: game.player2.username,
+      opponentElo: game.player2.elo,
     });
     this.server.to(match.p2.socketId).emit('game_start', {
       gameId: game.id,
       wordLength: game.wordLength,
-      opponentId: match.p1.userId,
+      opponentUsername: game.player1.username,
+      opponentElo: game.player1.elo,
     });
   }
 
