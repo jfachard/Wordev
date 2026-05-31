@@ -109,7 +109,13 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     payload: { gameId: string; guess: string },
   ) {
     const userId = client.data.userId;
-    const { gameId, guess } = payload;
+    const { gameId, guess } = payload ?? {};
+
+    if (!gameId || typeof gameId !== 'string' ||
+        !guess || typeof guess !== 'string' || guess.length > 20) {
+      client.emit('guess_error', { message: 'Invalid payload' });
+      return;
+    }
 
     try {
       const { result, attempts, isWin, opponentId } = await this.gamesService.submitVersusGuess(userId, gameId, guess);

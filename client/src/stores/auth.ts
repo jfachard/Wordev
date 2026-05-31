@@ -37,8 +37,13 @@ export const useAuthStore = defineStore('auth', () => {
     await userStore.fetchProfile()
   }
 
-  const logout = () => {
+  const logout = async () => {
     const userStore = useUserStore()
+    try {
+      await api.post('/auth/logout')
+    } catch {
+      // best-effort — clear local state regardless
+    }
     userStore.clearUser()
     accessToken.value = null
     refreshToken.value = null

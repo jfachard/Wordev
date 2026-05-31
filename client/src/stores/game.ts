@@ -79,7 +79,19 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  function cleanupOldShareTexts() {
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 7)
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i)
+      if (!key?.startsWith('wordev-daily-share-')) continue
+      const date = key.slice('wordev-daily-share-'.length)
+      if (date < cutoff.toISOString().slice(0, 10)) localStorage.removeItem(key)
+    }
+  }
+
   async function checkDailyStatus() {
+    cleanupOldShareTexts()
     phase.value = 'loading'
     try {
       const res = await api.get('/games/daily/today')
