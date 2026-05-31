@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
     const userStore = useUserStore()
     const response = await api.post('/auth/register', {
       email,
-      passwordHash: password,
+      password,
       username,
     })
     updateTokens(response.data.accessToken, response.data.refreshToken)
@@ -31,14 +31,19 @@ export const useAuthStore = defineStore('auth', () => {
     const userStore = useUserStore()
     const response = await api.post('/auth/login', {
       email,
-      passwordHash: password,
+      password,
     })
     updateTokens(response.data.accessToken, response.data.refreshToken)
     await userStore.fetchProfile()
   }
 
-  const logout = () => {
+  const logout = async () => {
     const userStore = useUserStore()
+    try {
+      await api.post('/auth/logout')
+    } catch {
+      // best-effort — clear local state regardless
+    }
     userStore.clearUser()
     accessToken.value = null
     refreshToken.value = null

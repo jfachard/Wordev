@@ -41,6 +41,11 @@ export const useGameStore = defineStore('game', () => {
   const attemptsLeft = computed(() => MAX_ATTEMPTS - guesses.value.length)
   const hintsLeft = computed(() => MAX_HINTS - hints.value.length)
 
+  function resetToSetup() {
+    reset()
+    phase.value = 'setup'
+  }
+
   function reset() {
     guesses.value = []
     revealingGuess.value = null
@@ -74,7 +79,19 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+  function cleanupOldShareTexts() {
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 7)
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i)
+      if (!key?.startsWith('wordev-daily-share-')) continue
+      const date = key.slice('wordev-daily-share-'.length)
+      if (date < cutoff.toISOString().slice(0, 10)) localStorage.removeItem(key)
+    }
+  }
+
   async function checkDailyStatus() {
+    cleanupOldShareTexts()
     phase.value = 'loading'
     try {
       const res = await api.get('/games/daily/today')
@@ -92,7 +109,7 @@ export const useGameStore = defineStore('game', () => {
         }))
         phase.value = 'playing'
       } else {
-        alreadyPlayedData.value = { won: !!data.winnerId, attempts: data.attempts }
+        alreadyPlayedData.value = { won: data.won, attempts: data.attempts }
         const today = new Date().toISOString().slice(0, 10)
         dailyShareText.value = localStorage.getItem(`wordev-daily-share-${today}`)
         phase.value = 'already_played'
@@ -208,7 +225,7 @@ export const useGameStore = defineStore('game', () => {
     currentInput, error, isSubmitting, revealedWord,
     hints, letterColors, attemptsLeft, hintsLeft, isHinting,
     alreadyPlayedData, dailyShareText,
-    startGame, submitGuess, addLetter, removeLetter, reset, requestHint,
+    startGame, submitGuess, addLetter, removeLetter, reset, resetToSetup, requestHint,
     checkDailyStatus, shareResult,
   }
 })

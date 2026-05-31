@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -11,7 +12,11 @@ import { DailyWordModule } from './daily-word/daily-word.module';
 import { GameModule } from './game/game.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), PrismaModule, AuthModule, UsersModule, GamesModule, WordModule, DailyWordModule, GameModule],
+  imports: [
+    ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }]),
+    PrismaModule, AuthModule, UsersModule, GamesModule, WordModule, DailyWordModule, GameModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

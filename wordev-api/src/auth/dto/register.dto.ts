@@ -6,7 +6,7 @@ export class RegisterDto {
 
   @IsNotEmpty()
   @MinLength(8)
-  passwordHash!: string;
+  password!: string;
 
   @IsNotEmpty()
   @MaxLength(20)

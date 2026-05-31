@@ -6,5 +6,5 @@ export class LoginDto {
 
   @IsNotEmpty()
   @MinLength(8)
-  passwordHash!: string;
+  password!: string;
 }

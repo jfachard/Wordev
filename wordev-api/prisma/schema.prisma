@@ -14,6 +14,7 @@ model User {
   elo          Int      @default(1000)
   wins         Int      @default(0)
   losses       Int      @default(0)
+  tokenVersion Int      @default(0)
   createdAt    DateTime @default(now())
 
   gamesAsPlayer1 Game[]    @relation("Player1")

@@ -9,22 +9,22 @@ export class AuthService {
     constructor(private prisma: PrismaService, private jwtService: JwtService) {}
 
     async register(registerDto: RegisterDto) {
-        const { email, passwordHash, username } = registerDto;
-        
-        const existingUser = await this.prisma.user.findFirst({ 
-            where: { 
+        const { email, password, username } = registerDto;
+
+        const existingUser = await this.prisma.user.findFirst({
+            where: {
                 OR: [
                     { email },
                     { username }
                 ]
-            } 
+            }
         });
-        
+
         if (existingUser) {
             throw new ConflictException('Email or username already exists');
         }
 
-        const hashedPassword = await bcrypt.hash(passwordHash, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await this.prisma.user.create({
             data: {
@@ -34,12 +34,8 @@ export class AuthService {
                 elo: 1000,
             },
         });
-        
-        const payload = { userId: user.id };
-        const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
-        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-        return { accessToken, refreshToken };
+        return this.login(user);
     }
 
     async findUserByEmail(email: string, password: string) {
@@ -60,29 +56,46 @@ export class AuthService {
         return userWithoutPassword;
     }
 
-    async login(user: { id: string; email: string; username: string }) {
-        const payload = { 
-            userId: user.id
-        };
-        const accessToken = this.jwtService.sign(payload, {
-            expiresIn: '1h',
-        });
-
-        const refreshToken = this.jwtService.sign(payload, {
-            expiresIn: '7d',
-        });
+    async login(user: { id: string; email: string; username: string; tokenVersion: number }) {
+        const accessToken = this.jwtService.sign(
+            { userId: user.id },
+            { expiresIn: '1h' },
+        );
+        const refreshToken = this.jwtService.sign(
+            { userId: user.id, tokenVersion: user.tokenVersion, type: 'refresh' },
+            { expiresIn: '7d' },
+        );
 
         return { accessToken, refreshToken };
     }
 
     async verifyToken(token: string) {
         try {
-            return this.jwtService.verify(token, {
-                secret: process.env.JWT_SECRET,
-            });
-        } catch (e) {
+            return this.jwtService.verify(token, { secret: process.env.JWT_SECRET });
+        } catch {
             throw new UnauthorizedException('Invalid token');
         }
+    }
+
+    async verifyRefreshToken(token: string) {
+        try {
+            const payload = this.jwtService.verify<{ userId: string; tokenVersion: number; type: string }>(token, {
+                secret: process.env.JWT_SECRET,
+            });
+            if (payload.type !== 'refresh') {
+                throw new UnauthorizedException('Invalid token type');
+            }
+            return payload;
+        } catch {
+            throw new UnauthorizedException('Invalid or expired refresh token');
+        }
+    }
+
+    async logout(userId: string) {
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { tokenVersion: { increment: 1 } },
+        });
     }
 
     async findUserById(userId: string) {

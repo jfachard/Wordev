@@ -13,7 +13,7 @@ export class GamesService {
 
     async startDailyGame(userId: string) {
         const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
+        startOfDay.setUTCHours(0, 0, 0, 0);
 
         const existing = await this.prisma.game.findFirst({
             where: {
@@ -48,7 +48,7 @@ export class GamesService {
 
     async getDailyStatus(userId: string) {
         const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
+        startOfDay.setUTCHours(0, 0, 0, 0);
 
         const game = await this.prisma.game.findFirst({
             where: {
@@ -87,7 +87,7 @@ export class GamesService {
             gameId: game.id,
             status: 'FINISHED',
             attempts: game.player1Attempts,
-            winnerId: game.winnerId,
+            won: game.winnerId !== null,
         };
     }
 
@@ -133,6 +133,11 @@ export class GamesService {
 
         if (guessWord.length !== targetWord.length) {
             throw new BadRequestException(`Guess must be exactly ${targetWord.length} characters long`);
+        }
+
+        const validWord = await this.prisma.word.findFirst({ where: { word: guessWord } });
+        if (!validWord) {
+            throw new BadRequestException('Not a valid word');
         }
 
         // Evaluate the guess
@@ -268,6 +273,11 @@ export class GamesService {
 
         if (guessWord.length !== targetWord.length) {
             throw new BadRequestException(`Guess must be exactly ${targetWord.length} characters long`);
+        }
+
+        const validWord = await this.prisma.word.findFirst({ where: { word: guessWord } });
+        if (!validWord) {
+            throw new BadRequestException('Not a valid word');
         }
 
         const isPlayer1 = game.player1Id === userId;

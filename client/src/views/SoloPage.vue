@@ -168,7 +168,7 @@ watch(() => game.phase, (newPhase, oldPhase) => {
         </p>
       </div>
       <button
-        @click="game.phase = 'setup'"
+        @click="game.resetToSetup()"
         class="px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
         :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
       >Play Again</button>
