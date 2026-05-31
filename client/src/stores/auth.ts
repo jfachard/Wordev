@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
     const userStore = useUserStore()
     const response = await api.post('/auth/register', {
       email,
-      passwordHash: password,
+      password,
       username,
     })
     updateTokens(response.data.accessToken, response.data.refreshToken)
@@ -31,7 +31,7 @@ export const useAuthStore = defineStore('auth', () => {
     const userStore = useUserStore()
     const response = await api.post('/auth/login', {
       email,
-      passwordHash: password,
+      password,
     })
     updateTokens(response.data.accessToken, response.data.refreshToken)
     await userStore.fetchProfile()

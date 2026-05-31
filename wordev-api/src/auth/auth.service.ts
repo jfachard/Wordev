@@ -9,22 +9,22 @@ export class AuthService {
     constructor(private prisma: PrismaService, private jwtService: JwtService) {}
 
     async register(registerDto: RegisterDto) {
-        const { email, passwordHash, username } = registerDto;
-        
-        const existingUser = await this.prisma.user.findFirst({ 
-            where: { 
+        const { email, password, username } = registerDto;
+
+        const existingUser = await this.prisma.user.findFirst({
+            where: {
                 OR: [
                     { email },
                     { username }
                 ]
-            } 
+            }
         });
-        
+
         if (existingUser) {
             throw new ConflictException('Email or username already exists');
         }
 
-        const hashedPassword = await bcrypt.hash(passwordHash, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await this.prisma.user.create({
             data: {

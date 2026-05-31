@@ -18,11 +18,7 @@ export class AuthController {
     async login(
         @Body() loginDto: LoginDto
     ) {
-        const user = await this.authService.findUserByEmail(loginDto.email, loginDto.passwordHash);
-        if(user instanceof UnauthorizedException){
-            throw user;
-        }
-
+        const user = await this.authService.findUserByEmail(loginDto.email, loginDto.password);
         return this.authService.login(user);
     }
 
@@ -31,14 +27,7 @@ export class AuthController {
         @Body('refreshToken') token: string
     ) {
         const payload = await this.authService.verifyToken(token);
-        if (payload instanceof UnauthorizedException) {
-            throw payload;
-        }
         const user = await this.authService.findUserById(payload.userId);
-
-        if(user instanceof UnauthorizedException){
-            throw user;
-        }
 
         if (!user) {
             throw new UnauthorizedException('User not found');
