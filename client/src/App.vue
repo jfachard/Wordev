@@ -2,15 +2,11 @@
 import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useUserStore } from '@/stores/user'
 
 const auth = useAuthStore()
-const userStore = useUserStore()
 
 onMounted(() => {
-  if (auth.isAuthenticated) {
-    userStore.fetchProfile()
-  }
+  auth.initAuth()
 })
 </script>
 
