@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { LogOut, Menu, X } from '@lucide/vue'
+import { LogOut, Menu, X, HelpCircle } from '@lucide/vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
+import HowToPlayModal from '@/components/HowToPlayModal.vue'
 
 const auth = useAuthStore()
 const userStore = useUserStore()
 const router = useRouter()
 const menuOpen = ref(false)
+const tutorialModal = ref<InstanceType<typeof HowToPlayModal> | null>(null)
 
 function logout() {
   auth.logout()
@@ -18,6 +20,8 @@ function logout() {
 </script>
 
 <template>
+  <HowToPlayModal ref="tutorialModal" />
+
   <header
     class="flex items-center justify-between px-4 py-4 md:px-8"
     :style="{ borderBottom: '1px solid var(--color-border)' }"
@@ -28,6 +32,14 @@ function logout() {
 
     <!-- Desktop -->
     <div class="hidden md:flex items-center gap-6">
+      <button
+        @click="tutorialModal?.show()"
+        class="flex items-center transition-colors duration-200"
+        :style="{ color: 'var(--color-text-muted)' }"
+        title="How to play"
+      >
+        <HelpCircle class="w-4 h-4" />
+      </button>
       <template v-if="auth.isAuthenticated">
         <span class="text-sm" :style="{ color: 'var(--color-text-muted)' }">
           {{ userStore.user?.username }}
@@ -54,6 +66,13 @@ function logout() {
 
     <!-- Mobile -->
     <div class="flex md:hidden items-center gap-3">
+      <button
+        @click="tutorialModal?.show()"
+        :style="{ color: 'var(--color-text-muted)' }"
+        title="How to play"
+      >
+        <HelpCircle class="w-5 h-5" />
+      </button>
       <ThemeToggle />
       <button @click="menuOpen = !menuOpen" :style="{ color: 'var(--color-text-muted)' }">
         <X v-if="menuOpen" class="w-5 h-5" />
@@ -79,7 +98,7 @@ function logout() {
       </div>
       <button
         @click="logout"
-        class="flex items-center gap-2 text-sm  uppercase tracking-widest transition-colors duration-200"
+        class="flex items-center gap-2 text-sm uppercase tracking-widest transition-colors duration-200"
         :style="{ color: 'var(--color-text-muted)' }"
       >
         <LogOut class="w-4 h-4" />

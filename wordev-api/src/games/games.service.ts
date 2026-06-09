@@ -2,14 +2,129 @@ import { Injectable, InternalServerErrorException, NotFoundException, BadRequest
 import { PrismaService } from '../prisma/prisma.service';
 import { WordService } from '../word/word.service';
 import { DailyWordService } from '../daily-word/daily-word.service';
+import { randomUUID } from 'crypto';
+
+interface GuestSession {
+    word: string;
+    hintsUsed: number;
+    hintedPositions: number[];
+    expiresAt: number;
+}
 
 @Injectable()
 export class GamesService {
+    private readonly guestSessions = new Map<string, GuestSession>();
+
     constructor(
         private prisma: PrismaService,
         private wordService: WordService,
         private dailyWordService: DailyWordService,
-    ) {}
+    ) {
+        setInterval(() => this.pruneGuestSessions(), 15 * 60 * 1000);
+    }
+
+    private pruneGuestSessions() {
+        const now = Date.now();
+        for (const [id, s] of this.guestSessions) {
+            if (s.expiresAt < now) this.guestSessions.delete(id);
+        }
+    }
+
+    async startGuestSoloGame(length?: number) {
+        const randomWord = await this.wordService.getRandomWord(length);
+        const sessionId = randomUUID();
+        this.guestSessions.set(sessionId, {
+            word: randomWord.word,
+            hintsUsed: 0,
+            hintedPositions: [],
+            expiresAt: Date.now() + 2 * 60 * 60 * 1000,
+        });
+        return { sessionId, wordLength: randomWord.word.length };
+    }
+
+    async startGuestDailyGame() {
+        const dailyWord = await this.dailyWordService.getToday();
+        const sessionId = randomUUID();
+        this.guestSessions.set(sessionId, {
+            word: dailyWord.word,
+            hintsUsed: 0,
+            hintedPositions: [],
+            expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+        });
+        return { sessionId, wordLength: dailyWord.length };
+    }
+
+    async submitGuestGuess(sessionId: string, guess: string) {
+        const session = this.guestSessions.get(sessionId);
+        if (!session || session.expiresAt < Date.now()) {
+            throw new NotFoundException('Guest session not found or expired');
+        }
+
+        const targetWord = session.word.toUpperCase();
+        const guessWord = guess.toUpperCase();
+
+        if (guessWord.length !== targetWord.length) {
+            throw new BadRequestException(`Guess must be exactly ${targetWord.length} characters long`);
+        }
+
+        const validWord = await this.prisma.word.findFirst({ where: { word: guessWord } });
+        if (!validWord) {
+            throw new BadRequestException('Not a valid word');
+        }
+
+        const result = new Array(targetWord.length).fill('absent');
+        const targetLetterCounts: Record<string, number> = {};
+        for (const char of targetWord) {
+            targetLetterCounts[char] = (targetLetterCounts[char] || 0) + 1;
+        }
+        for (let i = 0; i < targetWord.length; i++) {
+            if (guessWord[i] === targetWord[i]) {
+                result[i] = 'correct';
+                targetLetterCounts[guessWord[i]]--;
+            }
+        }
+        for (let i = 0; i < targetWord.length; i++) {
+            if (result[i] !== 'correct' && targetLetterCounts[guessWord[i]] > 0) {
+                result[i] = 'present';
+                targetLetterCounts[guessWord[i]]--;
+            }
+        }
+
+        const isWin = guessWord === targetWord;
+        return { guess: guessWord, result, isWin, word: isWin ? null : undefined };
+    }
+
+    async getGuestHint(sessionId: string) {
+        const MAX_HINTS = 3;
+        const session = this.guestSessions.get(sessionId);
+        if (!session || session.expiresAt < Date.now()) {
+            throw new NotFoundException('Guest session not found or expired');
+        }
+        if (session.hintsUsed >= MAX_HINTS) {
+            throw new BadRequestException('No hints remaining');
+        }
+
+        const word = session.word.toUpperCase();
+        const alreadyHinted = new Set(session.hintedPositions);
+        const available = Array.from({ length: word.length }, (_, i) => i).filter(i => !alreadyHinted.has(i));
+
+        if (available.length === 0) {
+            throw new BadRequestException('No more positions to hint');
+        }
+
+        const position = available[Math.floor(Math.random() * available.length)];
+        const letter = word[position];
+        session.hintsUsed++;
+        session.hintedPositions.push(position);
+
+        return { position, letter, hintsUsed: session.hintsUsed, hintsLeft: MAX_HINTS - session.hintsUsed };
+    }
+
+    async getGuestRevealedWord(sessionId: string) {
+        const session = this.guestSessions.get(sessionId);
+        if (!session) throw new NotFoundException('Guest session not found or expired');
+        return { word: session.word.toUpperCase() };
+    }
 
     async startDailyGame(userId: string) {
         const startOfDay = new Date();

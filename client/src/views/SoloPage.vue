@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { toast } from 'vue3-toastify'
+import { RouterLink } from 'vue-router'
 import { useGameStore } from '@/stores/game'
 
 const game = useGameStore()
@@ -112,6 +113,16 @@ watch(() => game.phase, (newPhase, oldPhase) => {
         class="px-8 py-3 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed transition-opacity"
         :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
       >{{ isStarting ? 'Starting…' : 'Start Game' }}</button>
+
+      <RouterLink
+        v-if="game.isGuest"
+        v-motion :initial="{ opacity: 0 }" :enter="{ opacity: 1, transition: { duration: 400, delay: 500 } }"
+        to="/auth"
+        class="block text-sm"
+        :style="{ color: 'var(--color-text-muted)' }"
+      >
+        Log in to track your stats &amp; play Versus &rarr;
+      </RouterLink>
     </div>
   </main>
 

@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { toast } from 'vue3-toastify'
 import { Calendar, Share2, Check, Timer } from '@lucide/vue'
+import { RouterLink } from 'vue-router'
 import { useGameStore } from '@/stores/game'
 
 const game = useGameStore()
@@ -96,6 +97,16 @@ onUnmounted(() => {
         class="px-8 py-3 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
         :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
       >Start Daily Challenge</button>
+
+      <RouterLink
+        v-if="game.isGuest"
+        v-motion :initial="{ opacity: 0 }" :enter="{ opacity: 1, transition: { duration: 400, delay: 320 } }"
+        to="/auth"
+        class="block text-sm"
+        :style="{ color: 'var(--color-text-muted)' }"
+      >
+        Log in to track your stats &amp; play Versus &rarr;
+      </RouterLink>
     </div>
   </main>
 

@@ -2,9 +2,8 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 })
 
 api.interceptors.request.use((config) => {
@@ -44,21 +43,16 @@ api.interceptors.response.use(
     original._retry = true
     isRefreshing = true
 
-    const refreshToken = localStorage.getItem('refreshToken')
-
-    if (!refreshToken) {
-      isRefreshing = false
-      forceLogout()
-      return Promise.reject(error)
-    }
-
     try {
-      const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/auth/refresh`, {
-        refreshToken,
-      })
+      // Refresh token is sent automatically via HttpOnly cookie
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_API_URL}/auth/refresh`,
+        {},
+        { withCredentials: true },
+      )
 
       const { useAuthStore } = await import('@/stores/auth')
-      useAuthStore().updateTokens(data.accessToken, data.refreshToken)
+      useAuthStore().updateTokens(data.accessToken)
 
       original.headers.Authorization = `Bearer ${data.accessToken}`
       processQueue(null, data.accessToken)
@@ -75,8 +69,6 @@ api.interceptors.response.use(
 
 function forceLogout() {
   localStorage.removeItem('accessToken')
-  localStorage.removeItem('refreshToken')
-  localStorage.removeItem('user')
   window.location.href = '/auth'
 }
 
