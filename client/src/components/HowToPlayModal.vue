@@ -72,7 +72,7 @@ const tileColors: Record<string, string> = {
         >
           <!-- Header -->
           <div class="flex items-center justify-between">
-            <h2 class="font-bold text-lg tracking-wide uppercase">How to Play</h2>
+            <h2 class="font-bold text-lg tracking-wide uppercase dark:text-white">How to Play</h2>
             <button @click="close" :style="{ color: 'var(--color-text-muted)' }">
               <X class="w-5 h-5" />
             </button>
