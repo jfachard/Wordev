@@ -123,6 +123,7 @@ export const CURATED_WORDS = {
     'REMOTE',
     'ORIGIN',
     // Concepts
+    'RETURN',
     'LAMBDA',
     'OBJECT',
     'STRING',
