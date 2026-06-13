@@ -2,10 +2,22 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { toast } from 'vue3-toastify'
 import { RouterLink } from 'vue-router'
+import { Share2, Check } from '@lucide/vue'
 import { useGameStore } from '@/stores/game'
 
 const game = useGameStore()
 const LENGTH_OPTIONS = [4, 5, 6, 7, 8, 9, 10]
+const shareState = ref<'idle' | 'copied'>('idle')
+
+async function share() {
+  const result = await game.shareResult()
+  if (result === 'copied') {
+    shareState.value = 'copied'
+    setTimeout(() => { shareState.value = 'idle' }, 2000)
+  } else if (result === 'failed') {
+    toast('Could not share result', { type: 'error' })
+  }
+}
 
 onMounted(() => {
   if (game.mode !== 'solo') {
@@ -178,11 +190,21 @@ watch(() => game.phase, (newPhase, oldPhase) => {
           <span class="font-bold" :style="{ color: 'var(--color-accent)' }">{{ game.revealedWord?.toUpperCase() }}</span>
         </p>
       </div>
-      <button
-        @click="game.resetToSetup()"
-        class="px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
-        :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
-      >Play Again</button>
+      <div class="flex flex-wrap gap-3 justify-center">
+        <button
+          @click="game.resetToSetup()"
+          class="px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
+          :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
+        >Play Again</button>
+        <button
+          @click="share()"
+          class="flex items-center gap-2 px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
+          :style="{ border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }"
+        >
+          <component :is="shareState === 'copied' ? Check : Share2" class="w-4 h-4" />
+          {{ shareState === 'copied' ? 'Copied' : 'Share' }}
+        </button>
+      </div>
     </div>
 
     <GameKeyboard

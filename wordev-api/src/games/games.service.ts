@@ -2,6 +2,8 @@ import { Injectable, InternalServerErrorException, NotFoundException, BadRequest
 import { PrismaService } from '../prisma/prisma.service';
 import { WordService } from '../word/word.service';
 import { DailyWordService } from '../daily-word/daily-word.service';
+import { UsersService } from '../users/users.service';
+import { DiscordWebhookService } from '../discord/discord-webhook.service';
 import { randomUUID } from 'crypto';
 
 interface GuestSession {
@@ -19,6 +21,8 @@ export class GamesService {
         private prisma: PrismaService,
         private wordService: WordService,
         private dailyWordService: DailyWordService,
+        private usersService: UsersService,
+        private discordWebhook: DiscordWebhookService,
     ) {
         setInterval(() => this.pruneGuestSessions(), 15 * 60 * 1000);
     }
@@ -204,6 +208,48 @@ export class GamesService {
             attempts: game.player1Attempts,
             won: game.winnerId !== null,
         };
+    }
+
+    async shareToDiscord(userId: string, gameId: string, shareText: string) {
+        const game = await this.prisma.game.findUnique({
+            where: { id: gameId },
+            select: {
+                id: true,
+                status: true,
+                player1Id: true,
+                player2Id: true,
+            },
+        });
+
+        if (!game) {
+            throw new NotFoundException('Game not found');
+        }
+
+        const isPlayer =
+            game.player1Id === userId || game.player2Id === userId;
+        if (!isPlayer) {
+            throw new NotFoundException('Game not found or you are not a player');
+        }
+
+        if (game.status !== 'FINISHED') {
+            throw new BadRequestException('Game is not finished');
+        }
+
+        const webhookUrl = await this.usersService.getDecryptedDiscordWebhook(userId);
+        if (!webhookUrl) {
+            throw new BadRequestException('Discord is not connected');
+        }
+
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { username: true },
+        });
+        const content = user?.username
+            ? `**${user.username}**\n${shareText}`
+            : shareText;
+
+        await this.discordWebhook.postMessage(webhookUrl, content);
+        return { ok: true };
     }
 
     async startSoloGame(userId: string, length?: number) {

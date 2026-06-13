@@ -2,6 +2,7 @@ import { ref, computed, nextTick } from 'vue'
 import { defineStore } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
+import { buildShareText, shareOrCopy } from '@/utils/share'
 import type { Guess, LetterResult, GamePhase } from '@/types/game'
 
 const MAX_ATTEMPTS = 6
@@ -184,6 +185,7 @@ export const useGameStore = defineStore('game', () => {
         }))
         phase.value = 'playing'
       } else {
+        gameId.value = data.gameId
         alreadyPlayedData.value = { won: data.won, attempts: data.attempts }
         const today = new Date().toISOString().slice(0, 10)
         dailyShareText.value = localStorage.getItem(`wordev-daily-share-${today}`)
@@ -197,25 +199,25 @@ export const useGameStore = defineStore('game', () => {
 
   function saveShareText(won: boolean) {
     const date = new Date().toISOString().slice(0, 10)
-    const emojiMap: Record<LetterResult, string> = { correct: '🟩', present: '🟨', absent: '⬛' }
-    const grid = guesses.value.map(g => g.result.map(r => emojiMap[r]).join('')).join('\n')
-    const text = `Wordev Daily ${date}\n${won ? guesses.value.length : 'X'}/6\n\n${grid}`
+    const text = buildShareText({ mode: 'daily', won, guesses: guesses.value, date })
     localStorage.setItem(`wordev-daily-share-${date}`, text)
     dailyShareText.value = text
   }
 
   async function shareResult(): Promise<'shared' | 'copied' | 'failed'> {
-    if (!dailyShareText.value) return 'failed'
-    try {
-      if (navigator.share) {
-        await navigator.share({ text: dailyShareText.value })
-        return 'shared'
-      }
-      await navigator.clipboard.writeText(dailyShareText.value)
-      return 'copied'
-    } catch {
-      return 'failed'
-    }
+    const text = getShareText()
+    if (!text) return 'failed'
+    return shareOrCopy(text)
+  }
+
+  function getShareText(): string | null {
+    if (mode.value === 'daily') return dailyShareText.value
+    return buildShareText({
+      mode: 'solo',
+      won: phase.value === 'won',
+      guesses: guesses.value,
+      wordLength: wordLength.value,
+    })
   }
 
   async function submitGuess() {
@@ -333,6 +335,6 @@ export const useGameStore = defineStore('game', () => {
     hints, letterColors, attemptsLeft, hintsLeft, isHinting,
     alreadyPlayedData, dailyShareText, isGuest,
     startGame, submitGuess, addLetter, removeLetter, reset, resetToSetup, requestHint,
-    checkDailyStatus, shareResult,
+    checkDailyStatus, shareResult, getShareText,
   }
 })

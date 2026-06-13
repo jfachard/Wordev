@@ -1,9 +1,10 @@
-import { Body, Controller, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { DiscordOAuthService } from './discord-oauth.service';
 import type { Response, Request } from 'express';
 
 const REFRESH_COOKIE = 'refreshToken';
@@ -17,7 +18,10 @@ const REFRESH_COOKIE_OPTIONS = {
 
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService) {}
+    constructor(
+        private authService: AuthService,
+        private discordOAuth: DiscordOAuthService,
+    ) {}
 
     @UseGuards(ThrottlerGuard)
     @Post('register')
@@ -71,5 +75,52 @@ export class AuthController {
     ) {
         await this.authService.logout(req.user.userId);
         res.clearCookie(REFRESH_COOKIE, { ...REFRESH_COOKIE_OPTIONS, maxAge: undefined });
+    }
+
+    @UseGuards(JwtAuthGuard, ThrottlerGuard)
+    @Post('discord/start')
+    discordStart(@Req() req: { user: { userId: string } }) {
+        const url = this.discordOAuth.startOAuth(req.user.userId);
+        return { url };
+    }
+
+    @UseGuards(ThrottlerGuard)
+    @Get('discord/callback')
+    async discordCallback(
+        @Query('code') code: string | undefined,
+        @Query('state') state: string | undefined,
+        @Query('error') error: string | undefined,
+        @Res() res: Response,
+    ) {
+        res.setHeader('Referrer-Policy', 'no-referrer');
+        if (error) {
+            return res.redirect(
+                this.discordOAuth.buildFrontendRedirect({
+                    discord: 'error',
+                    reason: error,
+                }),
+            );
+        }
+
+        if (!code || !state) {
+            return res.redirect(
+                this.discordOAuth.buildFrontendRedirect({
+                    discord: 'error',
+                    reason: 'missing_params',
+                }),
+            );
+        }
+
+        try {
+            const url = await this.discordOAuth.handleCallback(code, state);
+            return res.redirect(url);
+        } catch {
+            return res.redirect(
+                this.discordOAuth.buildFrontendRedirect({
+                    discord: 'error',
+                    reason: 'callback_failed',
+                }),
+            );
+        }
     }
 }
