@@ -17,6 +17,11 @@ model User {
   tokenVersion Int      @default(0)
   createdAt    DateTime @default(now())
 
+  discordWebhookEnc  String?
+  discordGuildName   String?
+  discordChannelName String?
+  discordConnectedAt DateTime?
+
   gamesAsPlayer1 Game[]    @relation("Player1")
   gamesAsPlayer2 Game[]    @relation("Player2")
   gamesWon       Game[]    @relation("Winner")

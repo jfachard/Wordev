@@ -1,6 +1,8 @@
 import { Controller, Post, Get, Param, UseGuards, Req, Body, Query } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { GamesService } from './games.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ShareDiscordDto } from './dto/share-discord.dto';
 
 @Controller('games')
 export class GamesController {
@@ -47,6 +49,17 @@ export class GamesController {
   async getGameStatus(@Req() req, @Param('id') id: string) {
     const userId = req.user.userId;
     return this.gamesService.getGameStatus(userId, id);
+  }
+
+  @UseGuards(JwtAuthGuard, ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post(':id/share/discord')
+  async shareToDiscord(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() dto: ShareDiscordDto,
+  ) {
+    return this.gamesService.shareToDiscord(req.user.userId, id, dto.shareText);
   }
 
   @Post('guest/solo/start')

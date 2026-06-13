@@ -41,6 +41,13 @@ function logout() {
         <HelpCircle class="w-4 h-4" />
       </button>
       <template v-if="auth.isAuthenticated">
+        <RouterLink
+          to="/settings"
+          class="text-sm transition-colors duration-200"
+          :style="{ color: 'var(--color-text-muted)' }"
+        >
+          Settings
+        </RouterLink>
         <span class="text-sm" :style="{ color: 'var(--color-text-muted)' }">
           {{ userStore.user?.username }}
         </span>
@@ -88,6 +95,14 @@ function logout() {
     :style="{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }"
   >
     <template v-if="auth.isAuthenticated">
+      <RouterLink
+        to="/settings"
+        @click="menuOpen = false"
+        class="text-sm uppercase tracking-widest"
+        :style="{ color: 'var(--color-text-muted)' }"
+      >
+        Settings
+      </RouterLink>
       <div class="flex items-center justify-between">
         <span class="text-sm" :style="{ color: 'var(--color-text-muted)' }">
           {{ userStore.user?.username }}

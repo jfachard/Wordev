@@ -1,11 +1,30 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { toast } from 'vue3-toastify'
+import { Share2, Check } from '@lucide/vue'
 import { useVersusStore } from '@/stores/versus'
 import { socketService } from '@/services/socket'
+import { buildShareText, shareOrCopy } from '@/utils/share'
 
 const router = useRouter()
 const versus = useVersusStore()
+const shareState = ref<'idle' | 'copied'>('idle')
+
+async function share() {
+  const text = buildShareText({
+    mode: 'versus',
+    won: versus.iWon,
+    guesses: versus.guesses,
+  })
+  const result = await shareOrCopy(text)
+  if (result === 'copied') {
+    shareState.value = 'copied'
+    setTimeout(() => { shareState.value = 'idle' }, 2000)
+  } else if (result === 'failed') {
+    toast('Could not share result', { type: 'error' })
+  }
+}
 
 onMounted(() => {
   if (!versus.gameId) {
@@ -129,21 +148,31 @@ function playAgain() {
             </p>
           </div>
 
-          <div class="flex gap-3">
+          <div class="space-y-3">
             <button
-              @click="playAgain"
-              class="flex-1 py-3 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
-              :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
-            >
-              Play Again
-            </button>
-            <button
-              @click="router.push('/')"
-              class="flex-1 py-3 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
+              @click="share()"
+              class="flex items-center justify-center gap-2 w-full py-3 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
               :style="{ border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }"
             >
-              Home
+              <component :is="shareState === 'copied' ? Check : Share2" class="w-4 h-4" />
+              {{ shareState === 'copied' ? 'Copied' : 'Share' }}
             </button>
+            <div class="flex gap-3">
+              <button
+                @click="playAgain"
+                class="flex-1 py-3 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
+                :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
+              >
+                Play Again
+              </button>
+              <button
+                @click="router.push('/')"
+                class="flex-1 py-3 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
+                :style="{ border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }"
+              >
+                Home
+              </button>
+            </div>
           </div>
         </div>
       </div>

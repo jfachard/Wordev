@@ -4,8 +4,10 @@ import { toast } from 'vue3-toastify'
 import { Calendar, Share2, Check, Timer } from '@lucide/vue'
 import { RouterLink } from 'vue-router'
 import { useGameStore } from '@/stores/game'
+import { useDiscordShare } from '@/composables/useDiscordShare'
 
 const game = useGameStore()
+const { discordConnected, discordShareState, shareToDiscord: sendToDiscord } = useDiscordShare()
 const countdown = ref('')
 const shareState = ref<'idle' | 'copied'>('idle')
 let countdownInterval: ReturnType<typeof setInterval> | null = null
@@ -31,6 +33,10 @@ async function share() {
   } else if (result === 'failed') {
     toast('Could not share result', { type: 'error' })
   }
+}
+
+function shareDiscord() {
+  sendToDiscord(game.gameId, game.getShareText())
 }
 
 watch(() => game.phase, (newPhase, oldPhase) => {
@@ -134,16 +140,26 @@ onUnmounted(() => {
         style="width: fit-content"
       >{{ dailyGrid }}</pre>
 
-      <button
-        v-if="game.dailyShareText"
-        @click="share()"
-        class="flex items-center gap-2 mx-auto px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer transition-colors duration-150"
-        :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
-      >
-        <Check v-if="shareState === 'copied'" class="w-4 h-4" />
-        <Share2 v-else class="w-4 h-4" />
-        {{ shareState === 'copied' ? 'Copied!' : 'Share Result' }}
-      </button>
+      <div v-if="game.dailyShareText" class="flex flex-wrap gap-3 justify-center">
+        <button
+          @click="share()"
+          class="flex items-center gap-2 px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer transition-colors duration-150"
+          :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
+        >
+          <Check v-if="shareState === 'copied'" class="w-4 h-4" />
+          <Share2 v-else class="w-4 h-4" />
+          {{ shareState === 'copied' ? 'Copied!' : 'Share Result' }}
+        </button>
+        <button
+          v-if="!game.isGuest && discordConnected"
+          @click="shareDiscord()"
+          class="flex items-center gap-2 px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
+          :style="{ border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }"
+        >
+          <Check v-if="discordShareState === 'sent'" class="w-4 h-4" />
+          {{ discordShareState === 'sent' ? 'Sent!' : 'Share to Discord' }}
+        </button>
+      </div>
 
       <div class="flex items-center justify-center gap-2 text-sm" :style="{ color: 'var(--color-text-muted)' }">
         <Timer class="w-4 h-4" />
@@ -203,16 +219,26 @@ onUnmounted(() => {
         style="width: fit-content"
       >{{ dailyGrid }}</pre>
 
-      <button
-        v-if="game.dailyShareText"
-        @click="share()"
-        class="flex items-center gap-2 px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer transition-colors duration-150"
-        :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
-      >
-        <Check v-if="shareState === 'copied'" class="w-4 h-4" />
-        <Share2 v-else class="w-4 h-4" />
-        {{ shareState === 'copied' ? 'Copied!' : 'Share Result' }}
-      </button>
+      <div v-if="game.dailyShareText" class="flex flex-wrap gap-3">
+        <button
+          @click="share()"
+          class="flex items-center gap-2 px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer transition-colors duration-150"
+          :style="{ backgroundColor: 'var(--color-accent)', color: 'var(--color-accent-dark)' }"
+        >
+          <Check v-if="shareState === 'copied'" class="w-4 h-4" />
+          <Share2 v-else class="w-4 h-4" />
+          {{ shareState === 'copied' ? 'Copied!' : 'Share Result' }}
+        </button>
+        <button
+          v-if="!game.isGuest && discordConnected"
+          @click="shareDiscord()"
+          class="flex items-center gap-2 px-6 py-2.5 font-bold tracking-widest uppercase text-sm rounded-xs cursor-pointer"
+          :style="{ border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }"
+        >
+          <Check v-if="discordShareState === 'sent'" class="w-4 h-4" />
+          {{ discordShareState === 'sent' ? 'Sent!' : 'Share to Discord' }}
+        </button>
+      </div>
 
       <div class="flex items-center gap-2 text-sm" :style="{ color: 'var(--color-text-muted)' }">
         <Timer class="w-4 h-4" />
