@@ -10,28 +10,86 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-const WORDLE_LIST_URL =
-  'https://raw.githubusercontent.com/tabatkins/wordle-list/main/words';
+const ENGLISH_WORDS_URL =
+  'https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt';
 
-async function fetchWordleList(): Promise<{ word: string; length: number }[]> {
-  const response = await fetch(WORDLE_LIST_URL);
+const GUESS_MIN_LEN = 4;
+const GUESS_MAX_LEN = 10;
+
+const CORPORA_BASE =
+  'https://raw.githubusercontent.com/dariusk/corpora/master/data/technology';
+
+const CORPORA_FILES = [
+  'computer_sciences.json',
+  'programming_languages.json',
+  'programming_languages_popular.json',
+  'new_technologies.json',
+];
+
+async function fetchEnglishGuessWords(): Promise<
+  { word: string; length: number }[]
+> {
+  const response = await fetch(ENGLISH_WORDS_URL);
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch Wordle list: ${response.status}`);
+    throw new Error(`Failed to fetch English dictionary: ${response.status}`);
   }
 
-  const text = await response.text();
+  const unique = new Set<string>();
 
-  const words = text
-    .trim()
-    .split('\n')
-    .map((w) => w.trim().toUpperCase())
-    .filter((w) => /^[A-Z]+$/.test(w))
-    .filter((w) => w.length === 5);
+  for (const line of (await response.text()).split('\n')) {
+    const word = line.trim().toUpperCase();
+    if (!/^[A-Z]+$/.test(word)) continue;
+    if (word.length < GUESS_MIN_LEN || word.length > GUESS_MAX_LEN) continue;
+    unique.add(word);
+  }
 
-  const unique = [...new Set(words)];
+  return [...unique].map((word) => ({ word, length: word.length }));
+}
 
-  return unique.map((word) => ({ word, length: word.length }));
+// corpora files come in two shapes: a raw string[] or an object whose first
+// array-valued property holds the words. This grabs the words either way.
+function extractStrings(json: unknown): string[] {
+  if (Array.isArray(json)) {
+    return json.filter((x): x is string => typeof x === 'string');
+  }
+  if (json && typeof json === 'object') {
+    for (const value of Object.values(json)) {
+      if (Array.isArray(value)) {
+        return value.filter((x): x is string => typeof x === 'string');
+      }
+    }
+  }
+  return [];
+}
+
+async function fetchCorporaTechWords(): Promise<
+  { word: string; length: number }[]
+> {
+  const unique = new Set<string>();
+
+  for (const file of CORPORA_FILES) {
+    try {
+      const res = await fetch(`${CORPORA_BASE}/${file}`);
+      if (!res.ok) {
+        console.warn(`⚠️  Skipping corpora ${file}: HTTP ${res.status}`);
+        continue;
+      }
+
+      const words = extractStrings(await res.json())
+        .map((w) => w.trim().toUpperCase())
+        .filter((w) => /^[A-Z]+$/.test(w))
+        .filter(
+          (w) => w.length >= GUESS_MIN_LEN && w.length <= GUESS_MAX_LEN,
+        );
+
+      words.forEach((w) => unique.add(w));
+    } catch (e) {
+      console.warn(`⚠️  Skipping corpora ${file}:`, (e as Error).message);
+    }
+  }
+
+  return [...unique].map((word) => ({ word, length: word.length }));
 }
 
 async function insertInChunks(
@@ -55,27 +113,34 @@ async function insertInChunks(
 async function main() {
   await prisma.$executeRaw`TRUNCATE TABLE "DailyWord", "Word" RESTART IDENTITY CASCADE`;
 
-  const wordleWords = await fetchWordleList();
+  const englishWords = await fetchEnglishGuessWords();
+  const englishData = englishWords.map((w) => ({ ...w, isAnswer: false }));
+  const englishInserted = await insertInChunks(englishData);
+  console.log(
+    `✅ English dictionary guesses inserted: ${englishInserted} (from ${englishWords.length} fetched)`,
+  );
 
-  const wordleData = wordleWords.map((w) => ({ ...w, isAnswer: false }));
-  const wordleInserted = await insertInChunks(wordleData);
+  const corporaWords = await fetchCorporaTechWords();
+  const corporaData = corporaWords.map((w) => ({ ...w, isAnswer: false }));
+  const corporaInserted = await insertInChunks(corporaData);
+  console.log(
+    `✅ Corpora tech guesses inserted: ${corporaInserted} (from ${corporaWords.length} fetched)`,
+  );
 
   const curated = getFlatCuratedWords();
 
-  let curatedCreated = 0;
-  let curatedUpdated = 0;
-
   for (const { word, length } of curated) {
-    const result = await prisma.word.upsert({
+    await prisma.word.upsert({
       where: { word },
       create: { word, length, isAnswer: true },
       update: { isAnswer: true },
     });
   }
 
-  const totalAnswers = await prisma.word.count({ where: { isAnswer: true } });
-
   const total = await prisma.word.count();
+  const totalAnswers = await prisma.word.count({ where: { isAnswer: true } });
+  console.log(`✅ Curated answers upserted: ${curated.length}`);
+  console.log(`📊 Total: ${total} words (${totalAnswers} answers)`);
 
   const distribution = await prisma.word.groupBy({
     by: ['length'],
@@ -84,6 +149,7 @@ async function main() {
     orderBy: { length: 'asc' },
   });
 
+  console.log('Answer distribution:');
   distribution.forEach((d) => {
     console.log(`   ${d.length} letters : ${d._count} words`);
   });
